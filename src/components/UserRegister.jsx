@@ -34,7 +34,7 @@ function UserRegister() {
     }
 
     try {
-      const response = await axios.post("https://quickambu-backend.onrender.com/api/user/register", formData, {
+      const response = await axios.post("https://quickambu-backend-1.onrender.com/api/user/register", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

@@ -10,7 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { io } from 'socket.io-client';
 
 // 👇 2. बैकएंड से कनेक्ट
-const socket = io("https://quickambu-backend.onrender.com");
+const socket = io("https://quickambu-backend-1.onrender.com");
 
 function AmbulanceDashboard() {
   const CHARGE_PER_BOOKING = 29;
@@ -43,7 +43,7 @@ function AmbulanceDashboard() {
       return;
     }
     try {
-      const response = await axios.get("https://quickambu-backend.onrender.com/api/driver/profile", {
+      const response = await axios.get("https://quickambu-backend-1.onrender.com/api/driver/profile", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -172,7 +172,7 @@ function AmbulanceDashboard() {
   const handleSaveProfile = async () => {
     const token = localStorage.getItem("driverToken");
     try {
-      const response = await axios.put("https://quickambu-backend.onrender.com/api/driver/profile", editForm, {
+      const response = await axios.put("https://quickambu-backend-1.onrender.com/api/driver/profile", editForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -299,7 +299,7 @@ function AmbulanceDashboard() {
   }
 
   const profileImageSrc = driverData.profilePhoto 
-    ? `https://quickambu-backend.onrender.com/${driverData.profilePhoto}` 
+    ? `https://quickambu-backend-1.onrender.com/${driverData.profilePhoto}` 
     : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
   return (

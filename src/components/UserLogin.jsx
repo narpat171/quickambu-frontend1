@@ -22,7 +22,7 @@ function UserLogin() {
     }
 
     try {
-      const response = await axios.post("https://quickambu-backend.onrender.com/api/user/login", {
+      const response = await axios.post("https://quickambu-backend-1.onrender.com/api/user/login", {
         mobile,
         password
       });

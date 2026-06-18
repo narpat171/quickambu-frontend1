@@ -91,7 +91,7 @@ function AmbuRegister(){
 
         try {
             // बैकएंड को भेजें (बिना Headers के, ताकि Multer खोल सके)
-            const response = await axios.post("https://quickambu-backend.onrender.com/api/driver/register", submitData);
+            const response = await axios.post("https://quickambu-backend-1.onrender.com/api/driver/register", submitData);
 
             if (response.data.success) {
                 alert("🎉 Success: " + response.data.message);

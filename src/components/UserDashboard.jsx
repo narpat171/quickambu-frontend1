@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
 
-const socket = io("https://quickambu-backend.onrender.com");
+const socket = io("https://quickambu-backend-1.onrender.com");
 
 function UserDashboard() {
   const [isRequested, setIsRequested] = useState(false);
@@ -41,7 +41,7 @@ function UserDashboard() {
     const token = localStorage.getItem("userToken");
     if (!token) { navigate("/UserLogin"); return; }
     try {
-      const response = await axios.get("https://quickambu-backend.onrender.com/api/user/profile", { headers: { Authorization: `Bearer ${token}` } });
+      const response = await axios.get("https://quickambu-backend-1.onrender.com/api/user/profile", { headers: { Authorization: `Bearer ${token}` } });
       if (response.data.success) {
         setUserData(response.data.data);
         setContactNumber(response.data.data.mobile);
@@ -130,7 +130,7 @@ function UserDashboard() {
   const handleSaveProfile = async () => {
     const token = localStorage.getItem("userToken");
     try {
-      const response = await axios.put("https://quickambu-backend.onrender.com/api/user/profile", editForm, { headers: { Authorization: `Bearer ${token}` } });
+      const response = await axios.put("https://quickambu-backend-1.onrender.com/api/user/profile", editForm, { headers: { Authorization: `Bearer ${token}` } });
       if (response.data.success) {
         triggerModal("Success!", "प्रोफाइल सफलतापूर्वक अपडेट हो गई!", "alert");
         setIsEditing(false);
@@ -176,7 +176,7 @@ function UserDashboard() {
   };
 
   if (!userData) return <div className="min-h-screen flex items-center justify-center font-bold text-gray-500">Loading QuickAmbu...</div>;
-  const profileImageSrc = userData.profilePhoto ? `https://quickambu-backend.onrender.com/${userData.profilePhoto}` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+  const profileImageSrc = userData.profilePhoto ? `https://quickambu-backend-1.onrender.com/${userData.profilePhoto}` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
   const journeyLabels = ["Waiting for Driver to Accept", "Ambulance Started", "On The Way", "Reached Patient", "Patient On Board", "Reached Hospital", "Trip Completed!"];
 

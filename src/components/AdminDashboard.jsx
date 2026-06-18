@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 
 // 🚀 Socket.io Import
 import io from 'socket.io-client';
-const socket = io("https://quickambu-backend.onrender.com");
+const socket = io("https://quickambu-backend-1.onrender.com");
 
 const initialAmbulances = [];
 
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
 
     const fetchAllDrivers = async () => {
       try {
-        const response = await axios.get("https://quickambu-backend.onrender.com/api/driver/all");
+        const response = await axios.get("https://quickambu-backend-1.onrender.com/api/driver/all");
         if (response.data.success && response.data.data.length > 0) {
           setAmbulances(response.data.data.map((d, index) => ({ 
             id: d._id, 

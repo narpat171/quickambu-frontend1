@@ -46,7 +46,7 @@ function AmbulanceHeader({ driverData, refreshProfile }) {
   const handleSaveProfile = async () => {
     const token = localStorage.getItem("driverToken");
     try {
-      const response = await axios.put("https://quickambu-backend.onrender.com/api/driver/profile", editForm, {
+      const response = await axios.put("https://quickambu-backend-1.onrender.com/api/driver/profile", editForm, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -71,7 +71,7 @@ function AmbulanceHeader({ driverData, refreshProfile }) {
 
   // प्रोफाइल फोटो पाथ सेटअप
   const profileImageSrc = driverData.photos?.ownerPhoto 
-    ? `https://quickambu-backend.onrender.com/${driverData.photos.ownerPhoto}` 
+    ? `https://quickambu-backend-1.onrender.com/${driverData.photos.ownerPhoto}` 
     : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
   return (

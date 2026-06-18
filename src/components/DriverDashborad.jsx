@@ -4,7 +4,7 @@ import { BellRing, MapPin, Phone, AlertTriangle, CheckCircle, Navigation } from 
 import io from 'socket.io-client';
 
 // 🚀 सर्वर से जुड़ने के लिए सॉकेट
-const socket = io("https://quickambu-backend.onrender.com");
+const socket = io("https://quickambu-backend-1.onrender.com");
 
 function DriverDashboard() {
   const [driverData, setDriverData] = useState(null);
@@ -23,7 +23,7 @@ function DriverDashboard() {
 
     const fetchProfile = async () => {
       try {
-        const response = await fetch("https://quickambu-backend.onrender.com/api/driver/profile", {
+        const response = await fetch("https://quickambu-backend-1.onrender.com/api/driver/profile", {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`
