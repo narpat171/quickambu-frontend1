@@ -12,7 +12,7 @@ import { io } from 'socket.io-client';
 // 👇 2. बैकएंड से कनेक्ट
 const socket = io("https://quickambu-backend-1.onrender.com");
 
-function AmbulanceDashboard() {
+export default function AmbulanceDashboard() {
   const CHARGE_PER_BOOKING = 29;
   const navigate = useNavigate();
 
@@ -602,5 +602,3 @@ function AmbulanceDashboard() {
     </div>
   );
 }
-
-export default AmbulanceDashboard;

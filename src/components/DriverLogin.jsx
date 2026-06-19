@@ -61,7 +61,7 @@ function DriverLogin() {
         </div>
       </header>
 
-      <div className="min-h-screen bg-gradient-to-r from-red-50 to-white flex items-center justify-center px-4 py-10 relative">
+      <div className="min-h-screen bg-linear-to-r from-red-50 to-white flex items-center justify-center px-4 py-10 relative">
         <div className="w-full max-w-md bg-white shadow-lg rounded-xl border p-8">
 
           <div className="flex flex-col items-center mb-6">
