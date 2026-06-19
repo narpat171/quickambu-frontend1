@@ -40,7 +40,7 @@ export default function App() {
       setDashboardLink("/UserDashboard"); 
     } else if (driverToken) {
       setIsLoggedIn(true);
-      setDashboardLink("/dashboard"); 
+      setDashboardLink("/AmbulanceDashboard"); 
     }
   }, []);
 
