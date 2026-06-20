@@ -7,6 +7,7 @@ import "leaflet/dist/leaflet.css";
 import Role from "./components/Role.jsx";
 import AmbuRegister from "./components/AmbuRegister.jsx";
 import UserRegister from "./components/UserRegister.jsx";
+import ForgotPassword from "./components/ForgotPassword.jsx";
 
 import {
   createBrowserRouter,
@@ -67,6 +68,10 @@ const router = createBrowserRouter([
    path: "/AdminLogin",
    element: <AdminLogin />
 },
+{
+    path: "/forgot-password",
+    element: <ForgotPassword />,
+  },
 ]);
 
 createRoot(document.getElementById("root")).render(

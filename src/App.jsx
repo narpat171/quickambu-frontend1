@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Phone,
   Clock,
@@ -27,8 +28,8 @@ export default function App() {
 
   useEffect(() => {
     AOS.init({
-      duration: 800, 
-      once: true,    
+      duration: 800,
+      once: true,
       easing: 'ease-in-out',
     });
 
@@ -37,17 +38,31 @@ export default function App() {
 
     if (userToken) {
       setIsLoggedIn(true);
-      setDashboardLink("/UserDashboard"); 
+      setDashboardLink("/UserDashboard");
     } else if (driverToken) {
       setIsLoggedIn(true);
-      setDashboardLink("/AmbulanceDashboard"); 
+      setDashboardLink("/AmbulanceDashboard");
     }
   }, []);
+  const navigate = useNavigate();
+
+  const handleBookAmbulanceClick = () => {
+    // 1. ब्राउज़र की मेमोरी (localStorage) में चेक करें कि क्या यूज़र लॉगिन है?
+    const userToken = localStorage.getItem('token');
+
+    if (userToken) {
+      // 2. अगर टोकन मिल गया (लॉगिन है), तो सीधा डैशबोर्ड पर भेजो!
+      navigate('/UserDashboard');
+    } else {
+      // 3. अगर टोकन नहीं है (लॉगिन नहीं है), तो सीधा User Login पेज पर भेजो!
+      navigate('/UserLogin');
+    }
+  };
 
   return (
     <div className="font-sans bg-slate-50 text-slate-800 min-h-screen overflow-x-hidden">
-      
-      {/* ➔ 1. सुपर-प्रीमियम 3D एम्बुलेंस और सड़क का CSS */}
+
+      {/* ➔ 1. सुपर-प्रीमियम 3D एम्बुलेंस और सड़क का CSS */}
       <style>
         {`
           /* एम्बुलेंस के उछलने का एनीमेशन (ज़िंदा इफ़ेक्ट) */
@@ -97,16 +112,27 @@ export default function App() {
             0%, 100% { opacity: 0.8; }
             50% { opacity: 0.6; }
           }
+          /* 👇 Book Ambulance बटन के कूदने (Jump) का एनीमेशन */
+          @keyframes buttonJump {
+            0%, 100% { 
+              transform: translateY(0) scale(1); 
+              box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3); 
+            }
+            50% { 
+              transform: translateY(-6px) scale(1.02); 
+              box-shadow: 0 15px 20px -3px rgba(220, 38, 38, 0.4); 
+            }
+          }
         `}
       </style>
 
       {/* --- HEADER --- */}
-       <header className="bg-white shadow-sm sticky top-0 z-50">
+      <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="text-red-600 font-bold text-2xl flex items-center gap-2">
               <div className="flex items-center gap-2">
-                <img src={Logo} alt="logo" className="w-15"/>
+                <img src={Logo} alt="logo" className="w-15" />
                 <div>
                   <span className="block leading-none tracking-tight">QuickAmbu</span>
                   <span className="block text-xs uppercase tracking-widest text-slate-500 font-semibold">Ambulance</span>
@@ -119,7 +145,7 @@ export default function App() {
             <p className="text-red-500 border-b-2 border-red-500 pb-1 cursor-pointer">Home</p>
             <Link to="/About"><p className="hover:text-red-500 transition-colors cursor-pointer">About Us</p></Link>
             <p className="hover:text-red-500 transition-colors cursor-pointer">Services</p>
-            
+
             {isLoggedIn ? (
               <Link to={dashboardLink}>
                 <p className="text-white bg-red-500 hover:bg-red-600 px-4 py-1.5 rounded-full font-bold transition-colors shadow-md cursor-pointer">
@@ -141,7 +167,7 @@ export default function App() {
           </div>
         </div>
       </header>
-      
+
       {/* --- MOBILE SIDE DRAWER --- */}
       <div className={`fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 transition-opacity duration-300 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMenuOpen(false)} />
 
@@ -173,7 +199,7 @@ export default function App() {
       {/* --- HERO SECTION --- */}
       <section className="relative bg-linear-to-r from-red-50 via-white to-red-50/30 overflow-hidden py-12 lg:py-20 z-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
+
           <div className="lg:col-span-6 z-10 text-center lg:text-left" data-aos="fade-right">
             <div className="inline-flex items-center gap-1.5 bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 mx-auto lg:mx-0">
               <Clock size={12} /> 24/7 Emergency Service
@@ -186,26 +212,35 @@ export default function App() {
               Book an ambulance in just a few clicks. We provide fast and advanced healthcare facilities at your door.
             </p>
             <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-               <Link to="/About"><button className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3.5 rounded-lg shadow-lg shadow-red-600/20 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer">
-                Learn More
-              </button></Link>
-              <Link to="/Role"><button className="w-full sm:w-auto bg-white hover:bg-slate-50 text-slate-700 font-semibold px-6 py-3.5 rounded-lg border border-slate-200 shadow-sm transition-all cursor-pointer">
-                Book Ambulance Now <span>➔</span>
-              </button></Link>
+              <Link to="/About">
+                <button className="w-full sm:w-auto bg-white border-2 border-red-600 hover:bg-red-50 text-red-600 font-semibold px-6 py-3.5 rounded-xl shadow-lg shadow-red-600/10 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer">
+                  Learn More
+                </button>
+              </Link>
+              
+              {/* 👇 पहला स्मार्ट और कूदने वाला बटन */}
+              <button
+                onClick={handleBookAmbulanceClick}
+                className="bg-red-600 hover:bg-red-700 text-white font-extrabold py-3.5 px-8 rounded-xl transition-colors cursor-pointer shadow-lg border-2 border-red-600"
+                style={{ animation: 'buttonJump 1.5s ease-in-out infinite' }}
+              >
+                Book Ambulance Now
+              </button>
+
             </div>
           </div>
 
           {/* ➔ 2. असली 'लगातार चलती हुई प्रीमियम कार्टून एम्बुलेंस' (NIGHT MODE) */}
           <div className="lg:col-span-6 relative flex justify-center items-center h-[350px] sm:h-[450px] mt-6 w-full" data-aos="zoom-in" data-aos-delay="200">
-            
+
             {/* पूरा सीन (Night Highway Box) */}
             <div className="absolute inset-0 bg-slate-900 rounded-[40px] overflow-hidden shadow-[inset_0_0_50px_rgba(0,0,0,0.6)] border-[6px] border-slate-200">
-              
+
               {/* पीछे भागते हुए शहर की बिल्डिंग्स (City Skyline) */}
               <div className="absolute bottom-[20%] left-0 w-full h-[60%] opacity-40" style={{
                 backgroundImage: 'repeating-linear-gradient(90deg, transparent 0, transparent 40px, #334155 40px, #334155 80px, transparent 80px, transparent 100px, #1e293b 100px, #1e293b 160px)',
                 backgroundSize: '300px 100%',
-                animation: 'bgMove 2s linear infinite' 
+                animation: 'bgMove 2s linear infinite'
               }}></div>
 
               {/* भागती हुई डार्क सड़क और पट्टियां */}
@@ -213,7 +248,7 @@ export default function App() {
                 <div className="w-full h-2.5 mt-4" style={{
                   backgroundImage: 'linear-gradient(90deg, #f8fafc 50%, transparent 50%)',
                   backgroundSize: '150px 100%',
-                  animation: 'roadMove 0.2s linear infinite' 
+                  animation: 'roadMove 0.2s linear infinite'
                 }}></div>
               </div>
 
@@ -227,10 +262,10 @@ export default function App() {
 
             {/* ➔ 3. PREMIUM 3D HTML/CSS CARTOON AMBULANCE */}
             <div className="relative flex flex-col items-center z-10 mt-10">
-              
+
               {/* उछलती हुई एम्बुलेंस बॉडी */}
               <div className="relative w-[320px] sm:w-[350px] h-[170px] sm:h-[190px] z-10" style={{ animation: 'driveBounce 0.35s ease-in-out infinite' }}>
-                
+
                 {/* ➔ टॉप लाइटबार (Glowing Police Light Bar) */}
                 <div className="absolute -top-5 left-[35%] w-24 h-5 bg-slate-800 rounded-t-lg flex overflow-hidden border-2 border-slate-800 z-0 shadow-lg">
                   <div className="w-1/2 h-full bg-red-500" style={{ animation: 'sirenPulseRed 0.4s infinite alternate' }}></div>
@@ -239,7 +274,7 @@ export default function App() {
 
                 {/* एम्बुलेंस का मुख्य डिब्बा (Aerodynamic Van Body) */}
                 <div className="absolute bottom-3 left-0 w-[95%] h-[90%] bg-linear-to-b from-white to-gray-200 rounded-l-xl rounded-tr-[60px] shadow-2xl border-[3px] border-slate-300 overflow-hidden flex flex-col justify-between z-10 relative">
-                  
+
                   {/* खिड़कियाँ (Dark Tinted Windows with Glare) */}
                   <div className="flex justify-end gap-2 p-3 pb-0">
                     <div className="w-16 h-14 bg-slate-800 rounded-md border-4 border-slate-700 relative overflow-hidden">
@@ -260,7 +295,7 @@ export default function App() {
                       QuickAmbu
                     </span>
                   </div>
-                  
+
                   {/* डार्क बम्पर */}
                   <div className="w-full h-4 bg-slate-800 mt-auto border-t border-slate-600"></div>
 
@@ -280,7 +315,7 @@ export default function App() {
                     <div className="w-3 h-3 bg-slate-900 rounded-full"></div>
                   </div>
                 </div>
-                
+
                 {/* आगे का पहिया */}
                 <div className="absolute -bottom-1 right-[18%] w-[60px] h-[60px] bg-slate-900 rounded-full border-4 border-slate-300 flex items-center justify-center shadow-xl z-20" style={{ animation: 'fastSpin 0.25s linear infinite' }}>
                   <div className="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center relative border-[3px] border-slate-700 border-dashed">
@@ -294,7 +329,7 @@ export default function App() {
               <div className="w-[280px] sm:w-[310px] h-4 bg-black/60 rounded-[100%] blur-md mt-2 z-0" style={{ animation: 'shadowBounce 0.35s ease-in-out infinite' }}></div>
 
             </div>
-            
+
           </div>
         </div>
       </section>
@@ -341,43 +376,43 @@ export default function App() {
             <h2 className="text-4xl md:text-5xl font-bold mt-5 text-gray-900 leading-tight">India’s Trusted <span className="text-red-600">Ambulance Booking</span> Platform</h2>
             <p className="text-gray-500 max-w-3xl mx-auto mt-5 text-lg leading-8">QuickAmbu helps patients and families book ambulances quickly during emergencies. We connect users with nearby ambulance providers for fast, safe, and reliable medical transport.</p>
           </div>
-      
+
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="relative" data-aos="zoom-in" data-aos-delay="100">
               <div className="bg-red-100 absolute -top-6 -left-6 w-40 h-40 rounded-full blur-3xl opacity-60"></div>
-              <img src="https://img.mathrubhumi.com/view/acePublic/alias/contentid/1i4id69iprkvtz1xpvr/1/ambulance.webp?f=3:2&q=0.75&w=900" alt="QuickAmbu Ambulance" className="relative rounded-2xl shadow-2xl w-full object-cover"/>
+              <img src="https://img.mathrubhumi.com/view/acePublic/alias/contentid/1i4id69iprkvtz1xpvr/1/ambulance.webp?f=3:2&q=0.75&w=900" alt="QuickAmbu Ambulance" className="relative rounded-2xl shadow-2xl w-full object-cover" />
             </div>
-      
+
             <div data-aos="fade-left" data-aos-delay="200">
               <h3 className="text-3xl font-bold text-gray-900 leading-snug">Fast Ambulance Booking With Advanced Medical Support</h3>
               <p className="text-gray-600 mt-6 leading-8 text-lg">QuickAmbu is designed to reduce ambulance waiting time and make emergency transportation easier. Users can instantly book ambulances according to their medical needs and select additional life-saving features.</p>
-      
+
               <div className="grid sm:grid-cols-2 gap-5 mt-8">
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center text-xl mb-4"><FaAmbulance/></div>
+                  <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center text-xl mb-4"><FaAmbulance /></div>
                   <h4 className="font-semibold text-lg text-gray-900">Instant Booking</h4>
                   <p className="text-gray-500 mt-2 text-sm">Book nearby ambulances within seconds anytime, anywhere.</p>
                 </div>
-      
+
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center text-xl mb-4"><FcLike/></div>
+                  <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center text-xl mb-4"><FcLike /></div>
                   <h4 className="font-semibold text-lg text-gray-900">Emergency Support</h4>
                   <p className="text-gray-500 mt-2 text-sm">Advanced life support and emergency medical facilities available.</p>
                 </div>
-      
+
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center text-xl mb-4"><FaLocationDot/></div>
+                  <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center text-xl mb-4"><FaLocationDot /></div>
                   <h4 className="font-semibold text-lg text-gray-900">Live Tracking</h4>
                   <p className="text-gray-500 mt-2 text-sm">Track ambulance location and estimated arrival time live.</p>
                 </div>
-      
+
                 <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center text-xl mb-4"><VscWorkspaceTrusted/></div>
+                  <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center text-xl mb-4"><VscWorkspaceTrusted /></div>
                   <h4 className="font-semibold text-lg text-gray-900">Trusted Service</h4>
                   <p className="text-gray-500 mt-2 text-sm">Verified ambulance partners with trained medical staff.</p>
                 </div>
               </div>
-      
+
               <div className="grid grid-cols-3 gap-4 mt-10">
                 <div className="bg-white rounded-xl p-5 shadow-sm text-center border border-gray-100">
                   <h4 className="text-3xl font-bold text-red-600">{30}</h4>
@@ -394,21 +429,26 @@ export default function App() {
               </div>
             </div>
           </div>
-      
+
           <div className="mt-15 bg-white rounded-xl p-10 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-md" data-aos="fade-up">
             <div>
               <h3 className="text-3xl font-bold">Need Emergency Ambulance Service?</h3>
               <p className="text-gray-500 mt-3 text-lg">Book an ambulance quickly with QuickAmbu and get fast medical transportation support.</p>
             </div>
-            <Link to={isLoggedIn ? dashboardLink : "/Role"}>
-              <button className="bg-red-500 text-white font-semibold px-8 py-4 rounded-xl hover:scale-105 transition-all duration-300 shadow-lg cursor-pointer">
-                Book Ambulance Now
-              </button>
-            </Link>
+            
+            {/* 👇 दूसरा स्मार्ट और कूदने वाला बटन */}
+            <button 
+              onClick={handleBookAmbulanceClick} 
+              className="bg-red-600 hover:bg-red-700 text-white font-extrabold px-10 py-4 rounded-xl cursor-pointer shadow-lg"
+              style={{ animation: 'buttonJump 1.5s ease-in-out infinite' }}
+            >
+              Book Ambulance Now
+            </button>
+
           </div>
         </div>
       </div>
-      
+
       {/* --- FOOTER CALL TO ACTION --- */}
       <footer className="bg-red-600 text-white py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -419,16 +459,16 @@ export default function App() {
               <p className="text-red-100 text-xs">Call us now for the fastest response</p>
             </div>
           </div>
-          <a 
-            href="tel:+919876543210" 
-            className="bg-white text-red-600 font-bold px-6 py-3 rounded-xl shadow-md flex items-center gap-2 hover:bg-red-50 transition-all w-full sm:w-auto justify-center text-base"
+          <a
+            href="tel:+919876543210"
+            className="bg-white text-red-600 font-bold px-6 py-3 rounded-xl shadow-md flex items-center gap-2 hover:bg-red-50 transition-all w-full sm:w-auto justify-center text-base cursor-pointer"
           >
             <Phone size={18} className="fill-current" />
             Emergency Call
           </a>
         </div>
       </footer>
-      <Footer/>
+      <Footer />
     </div>
   );
 }
