@@ -120,36 +120,6 @@ function Role() {
           </div>
 
         </div>
-
-        {/* ================= SECTION 3: ADMIN CONTROL ROOM ================= */}
-        <div className="w-full mt-2">
-          <Link to="/AdminLogin" className="block no-underline">
-            <div className="cursor-pointer rounded-2xl p-5 border-2 bg-slate-900 border-slate-800 hover:border-red-500 transition-all flex items-center gap-4 shadow-xl active:scale-[0.98] min-h-[110px] relative overflow-hidden group">
-              
-              {/* Top Red Glow Effect */}
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-red-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 bg-slate-800 text-red-500 shadow-inner group-hover:scale-110 transition-transform duration-300">
-                <ShieldAlert className="w-7 h-7" />
-              </div>
-              
-              <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <h4 className="font-extrabold text-white text-lg tracking-wide">Master Control Room</h4>
-                  <span className="flex items-center gap-1.5 text-[9px] font-bold text-red-400 uppercase tracking-widest bg-red-500/10 px-2.5 py-1 rounded-md border border-red-500/20">
-                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
-                    Admin Only
-                  </span>
-                </div>
-                <p className="text-slate-400 text-xs mt-1.5 font-medium leading-tight">
-                  Secure access for system administrators to dispatch and track emergency vehicles live on the map.
-                </p>
-              </div>
-
-            </div>
-          </Link>
-        </div>
-
       </main>
 
       {/* FOOTER */}
