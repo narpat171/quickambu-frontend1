@@ -7,6 +7,7 @@ import { LogOut } from 'lucide-react';
 import Logo from '../assets/logo.png'; 
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
+import { Link } from 'react-router-dom';
 
 // 🚀 Socket.io Import
 import io from 'socket.io-client';
@@ -77,15 +78,18 @@ export default function AdminDashboard() {
   const audioContextRef = useRef(null);
   const oscillatorRef = useRef(null);
 
+  // 👉 Security Guard: अगर एडमिन लॉगिन नहीं है, तो तुरंत बाहर निकालो
   useEffect(() => {
-    if (!localStorage.getItem("adminAuth")) navigate("/AdminLogin");
+    const isAuth = localStorage.getItem("adminAuth");
+    if (isAuth !== "true") {
+      navigate("/AdminLogin");
+    }
 
-    // 📍 चूँकि अभी बैकएंड में ड्राइवरों की लोकेशन सेव नहीं है, 
-    // इसलिए टेस्टिंग के लिए हम राजस्थान के अलग-अलग शहरों की असली लोकेशन सेट कर रहे हैं
+    // 📍 टेस्टिंग के लिए राजस्थान के अलग-अलग शहरों की असली लोकेशन 
     const rajasthanCoords = [
-      [28.2900, 74.9700], // चुरू शहर (भालेरी से करीब)
-      [28.6700, 75.0300], // तारानगर (भालेरी के सबसे पास)
-      [26.9124, 75.7873], // जयपुर (भालेरी से दूर)
+      [28.2900, 74.9700], // चुरू शहर
+      [28.6700, 75.0300], // तारानगर 
+      [26.9124, 75.7873], // जयपुर 
       [28.0200, 73.3100], // बीकानेर
       [27.6000, 75.1500]  // सीकर
     ];
@@ -128,7 +132,7 @@ export default function AdminDashboard() {
         location: newReq.location || "Live GPS Location",
         emergencyType: newReq.emergency,
         time: newReq.time,
-        coords: newReq.coords // 👈 मरीज़ की असली लोकेशन
+        coords: newReq.coords // 👈 मरीज़ की असली लोकेशन
       });
     });
 
@@ -139,14 +143,13 @@ export default function AdminDashboard() {
     socket.on("driver-location-update", (data) => {
       setSentRequests(prev => prev.map(req => {
         if (req.id === data.reqId) {
-          // 📍 लाइव दूरी दोबारा नापें (मरीज़ की फिक्स लोकेशन से ड्राइवर की नई लोकेशन तक)
+          // 📍 लाइव दूरी दोबारा नापें
           const newLiveDistance = calculateDistance(req.userLat, req.userLng, data.lat, data.lng).toFixed(1);
           return { ...req, ambLat: data.lat, ambLng: data.lng, distanceKm: `${newLiveDistance} km` }; 
         }
         return req;
       }));
 
-      // अगर ट्रैकिंग मोडल ओपन है, तो उसमें भी लाइव लोकेशन और लाइव दूरी अपडेट करें
       setTrackingData(prev => {
         if (prev && prev.id === data.reqId) {
           const newLiveDistance = calculateDistance(prev.userLat, prev.userLng, data.lat, data.lng).toFixed(1);
@@ -258,7 +261,6 @@ export default function AdminDashboard() {
     const userLng = currentLiveUser.coords[1];
 
     setAmbulances(prev => prev.map(amb => {
-      // अगर एम्बुलेंस के कोऑर्डिनेट्स हैं, तो असली दूरी निकालें
       if (amb.coords && amb.coords.length === 2) {
         const exactDistance = calculateDistance(userLat, userLng, amb.coords[0], amb.coords[1]);
         return { 
@@ -283,7 +285,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // 🚀 सबसे नज़दीकी एम्बुलेंस सबसे ऊपर आएगी
   const displayedAmbulances = isLocationFiltered
     ? [...ambulances].sort((a, b) => a.kmValue - b.kmValue)
     : ambulances;
@@ -300,7 +301,6 @@ export default function AdminDashboard() {
     const userLat = currentLiveUser?.coords?.[0] || 26.8655; 
     const userLng = currentLiveUser?.coords?.[1] || 75.7834;
 
-    // एम्बुलेंस की असली लोकेशन
     const ambulanceStartLat = amb.coords?.[0] || userLat;
     const ambulanceStartLng = amb.coords?.[1] || userLng;
 
@@ -329,7 +329,7 @@ export default function AdminDashboard() {
       status: "Dispatched",
       userLat: userLat, 
       userLng: userLng, 
-      ambLat: ambulanceStartLat, // 👈 ट्रैक मैप के लिए एम्बुलेंस की स्टार्टिंग लोकेशन
+      ambLat: ambulanceStartLat, 
       ambLng: ambulanceStartLng,
       distanceKm: amb.distance,
       driverName: amb.driver,
@@ -351,14 +351,14 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 text-gray-900 font-sans antialiased relative animate-page-fade">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 text-gray-900 font-sans antialiased relative animate-page-fade">
       
       {/* HEADER */}
       <header className="bg-[#0b1120]/95 backdrop-blur-xl border-b border-slate-800 text-white h-20 flex items-center px-6 md:px-10 justify-between sticky top-0 z-50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-4">
           <div className="relative shrink-0 flex items-center justify-center">
             <div className="absolute inset-0 bg-red-500 blur-xl opacity-20 rounded-full"></div>
-            <img src={Logo} alt="QuickAmbu" className="w-12 h-12 object-contain relative drop-shadow-2xl"/> 
+           <Link to="/"><img src={Logo} alt="QuickAmbu" className="w-12 h-12 object-contain relative drop-shadow-2xl"/></Link>
           </div>
           <div className="flex flex-col">
             <h1 className="text-2xl font-black tracking-tight flex items-center gap-1">Quick<span className="text-red-500">Ambu</span></h1>
@@ -377,6 +377,8 @@ export default function AdminDashboard() {
             <p className="text-sm font-bold text-emerald-400">Online & Secure</p>
           </div>
           <div className="h-8 w-px bg-slate-800 hidden md:block"></div>
+          
+          {/* 👉 ADMIN LOGOUT BUTTON */}
           <button onClick={() => { localStorage.removeItem("adminAuth"); navigate("/"); }} className="flex items-center gap-2 bg-slate-800/50 hover:bg-red-500/10 text-slate-300 hover:text-red-400 border border-slate-700 hover:border-red-500/50 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer shadow-sm">
             <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Exit Control</span>
           </button>
@@ -682,7 +684,7 @@ export default function AdminDashboard() {
               </div>
               
               <div className="w-full h-80 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200 relative shadow-inner">
-                {/* 📍 असली लोकेशन मैप (A से B तक का रास्ता) */}
+                {/* 👇 यह रहा आपका परफेक्ट Google Maps का लिंक */}
                 <iframe
                   title="Live Route"
                   src={`https://maps.google.com/maps?saddr=${trackingData.ambLat},${trackingData.ambLng}&daddr=${trackingData.userLat},${trackingData.userLng}&output=embed`}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShieldAlert, Lock, User, ArrowLeft } from 'lucide-react';
 
@@ -7,6 +7,14 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // 👉 नया स्मार्ट फीचर: अगर एडमिन पहले से लॉगिन है, तो सीधा अंदर (Dashboard) भेजो!
+  useEffect(() => {
+    const isAuth = localStorage.getItem("adminAuth");
+    if (isAuth === "true") {
+      navigate("/admin"); 
+    }
+  }, [navigate]);
 
   const handleLogin = (e) => {
     e.preventDefault();
