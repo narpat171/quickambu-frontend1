@@ -7,10 +7,10 @@ import axios from "axios";
 function DriverLogin() {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
-  
+
   // ➔ 1. ड्राइवर लॉगिन सक्सेस पॉप-अप के लिए स्टेट
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  
+
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -31,7 +31,7 @@ function DriverLogin() {
       if (response.data.success) {
         // ड्राइवर का टोकन सेव करें
         localStorage.setItem("driverToken", response.data.token);
-        
+
         // ➔ 2. बोरिंग alert हटाकर अपना शानदार पॉप-अप दिखाओ!
         setShowSuccessPopup(true);
       }
@@ -51,7 +51,7 @@ function DriverLogin() {
               </button>
             </Link>
             <div className="flex items-center gap-1.5">
-              <Link to="/"><img src={Logo} alt="logo" className="w-15"/></Link>
+              <Link to="/"><img src={Logo} alt="logo" className="w-15" /></Link>
               <div className="flex flex-col leading-none">
                 <span className="text-red-600 font-extrabold text-lg tracking-wide">QuickAmbu</span>
                 <span className="text-gray-400 text-[9px] uppercase tracking-widest font-bold">Ambulance</span>
@@ -75,7 +75,7 @@ function DriverLogin() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
-            
+
             {/* मोबाइल नंबर इनपुट */}
             <div>
               <label className="block mb-1 font-medium text-gray-700 text-sm">Mobile Number</label>
@@ -109,7 +109,12 @@ function DriverLogin() {
             >
               Login as Driver ➔
             </button>
-            
+            <div style={{ textAlign: 'right', marginTop: '5px' }}>
+              <Link to="/driver-forgot-password" style={{ color: '#2563eb', fontSize: '14px', textDecoration: 'none' }}>
+                Forgot Password?
+              </Link>
+            </div>
+
             <div className="text-center pt-2">
               <span className="text-gray-500 text-xs">Want to join us? </span>
               <Link to="/AmbuRegister" className="text-blue-600 text-xs font-semibold hover:underline">Register Ambulance</Link>
@@ -121,16 +126,16 @@ function DriverLogin() {
         {showSuccessPopup && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
             <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl flex flex-col items-center text-center transform scale-100 animate-bounce-short">
-              
+
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              
+
               <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Driver Login Success!</h2>
               <p className="text-gray-500 text-sm mb-6">Welcome back! You are now ready to receive emergency duty requests.</p>
-              
+
               {/* ➔ 4. ड्राइवर को उसके डैशबोर्ड (/dashboard) पर भेजें */}
-              <button 
+              <button
                 onClick={() => navigate("/AmbulanceDashboard")}
                 className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/30 active:scale-95"
               >
