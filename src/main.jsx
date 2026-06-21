@@ -21,6 +21,7 @@ import AmbulanceDashboard from "./components/AmbulanceDashboard.jsx";
 // 👇 1. यहाँ AdminDashboard को इम्पोर्ट किया गया है 
 import AdminDashboard from "./components/AdminDashboard.jsx"; 
 import AdminLogin from "./components/AdminLogin.jsx";
+import DriverForgotPassword from "./components/DriverForgotPassword.jsx";
 
 const router = createBrowserRouter([
   {
@@ -71,6 +72,10 @@ const router = createBrowserRouter([
 {
     path: "/forgot-password",
     element: <ForgotPassword />,
+  },
+  {
+    path: '/driver-forgot-password',
+    element: <DriverForgotPassword />,
   },
 ]);
 
