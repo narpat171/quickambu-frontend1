@@ -157,8 +157,8 @@ export default function App() {
                 <p className="hover:text-red-500 transition-colors cursor-pointer">Register/Login</p>
               </Link>
             )}
-           <Link to="/developers"><p className="hover:text-red-500 transition-colors cursor-pointer">Developers</p></Link>
-            <p className="hover:text-red-500 transition-colors cursor-pointer">Contact Us</p>
+            <p className="hover:text-red-500 transition-colors cursor-pointer">Developers</p>
+            <Link to="/developers"><p className="hover:text-red-500 transition-colors cursor-pointer">Contact Us</p></Link>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -187,7 +187,7 @@ export default function App() {
             ) : (
               <Link to="/Role" onClick={() => setIsMenuOpen(false)} className="text-slate-600 hover:text-red-500 font-medium px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">Register/Login</Link>
             )}
-             <Link to="/developers" onClick={() => setIsMenuOpen(false)} className="text-slate-600 hover:text-red-500 font-medium px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">Developers</Link>
+            <Link to="/developers" onClick={() => setIsMenuOpen(false)} className="text-slate-600 hover:text-red-500 font-medium px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">Developers</Link>
             <p onClick={() => setIsMenuOpen(false)} className="text-slate-600 hover:text-red-500 font-medium px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">Contact Us</p>
           </nav>
         </div>
@@ -219,7 +219,7 @@ export default function App() {
                   Learn More
                 </button>
               </Link>
-              
+
               {/* 👇 पहला स्मार्ट और कूदने वाला बटन */}
               <button
                 onClick={handleBookAmbulanceClick}
@@ -437,10 +437,10 @@ export default function App() {
               <h3 className="text-3xl font-bold">Need Emergency Ambulance Service?</h3>
               <p className="text-gray-500 mt-3 text-lg">Book an ambulance quickly with QuickAmbu and get fast medical transportation support.</p>
             </div>
-            
+
             {/* 👇 दूसरा स्मार्ट और कूदने वाला बटन */}
-            <button 
-              onClick={handleBookAmbulanceClick} 
+            <button
+              onClick={handleBookAmbulanceClick}
               className="bg-red-600 hover:bg-red-700 text-white font-extrabold px-10 py-4 rounded-xl cursor-pointer shadow-lg"
               style={{ animation: 'buttonJump 1.5s ease-in-out infinite' }}
             >
