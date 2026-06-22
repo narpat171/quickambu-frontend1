@@ -47,18 +47,18 @@ export default function App() {
   const navigate = useNavigate();
 
   const handleBookAmbulanceClick = () => {
-    // 1. ब्राउज़र की मेमोरी (localStorage) में चेक करें कि क्या यूज़र लॉगिन है?
-    const userToken = localStorage.getItem('token');
+    // ➔ सही टोकन का नाम इस्तेमाल करें
+    const userToken = localStorage.getItem('userToken');
+    const driverToken = localStorage.getItem('driverToken');
 
     if (userToken) {
-      // 2. अगर टोकन मिल गया (लॉगिन है), तो सीधा डैशबोर्ड पर भेजो!
       navigate('/UserDashboard');
+    } else if (driverToken) {
+      navigate('/AmbulanceDashboard');
     } else {
-      // 3. अगर टोकन नहीं है (लॉगिन नहीं है), तो सीधा User Login पेज पर भेजो!
       navigate('/UserLogin');
     }
   };
-
   return (
     <div className="font-sans bg-slate-50 text-slate-800 min-h-screen overflow-x-hidden">
 
@@ -157,8 +157,8 @@ export default function App() {
                 <p className="hover:text-red-500 transition-colors cursor-pointer">Register/Login</p>
               </Link>
             )}
-            <p className="hover:text-red-500 transition-colors cursor-pointer">Developers</p>
-            <Link to="/developers"><p className="hover:text-red-500 transition-colors cursor-pointer">Contact Us</p></Link>
+            <Link to="/developers"><p className="hover:text-red-500 transition-colors cursor-pointer">Developers</p></Link>
+            <p className="hover:text-red-500 transition-colors cursor-pointer">Contact Us</p>
           </nav>
 
           <div className="flex items-center gap-4">
