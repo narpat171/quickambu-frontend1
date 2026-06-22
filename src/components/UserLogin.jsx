@@ -1,17 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Logo from "../assets/logo.png";
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle } from 'lucide-react'; // ➔ नया आइकॉन जोड़ा है
+import { ArrowLeft, CheckCircle } from 'lucide-react'; 
 import axios from "axios";
+
+// 👇 1. AOS इम्पोर्ट किया
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 function UserLogin() {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
-
-  // ➔ 1. पॉप-अप दिखाने या छुपाने के लिए नया स्टेट
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const navigate = useNavigate();
+
+  // 👇 2. पेज लोड होते ही एनिमेशन चालू करने के लिए useEffect
+  useEffect(() => {
+    AOS.init({
+      duration: 600, // 0.6 सेकंड का स्मूथ एनिमेशन
+      easing: 'ease-out-cubic',
+      once: true,
+    });
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,10 +39,7 @@ function UserLogin() {
       });
 
       if (response.data.success) {
-        // टोकन सेव करो, लेकिन सीधे नेविगेट मत करो
         localStorage.setItem("userToken", response.data.token);
-
-        // ➔ 2. ब्राउज़र का alert हटाकर अपना कस्टम पॉप-अप चालू कर दो!
         setShowSuccessPopup(true);
       }
     } catch (error) {
@@ -60,8 +68,10 @@ function UserLogin() {
         </div>
       </header>
 
-      <div className="min-h-screen bg-linear-to-r from-red-50 to-white flex items-center justify-center px-4 py-10 relative">
-        <div className="w-full max-w-md bg-white shadow-lg rounded-xl border p-8">
+      <div className="min-h-screen bg-linear-to-r from-red-50 to-white flex items-center justify-center px-4 py-10 relative overflow-hidden">
+        
+        {/* 👇 3. यहाँ data-aos="fade-up" लगाया है जिससे फॉर्म नीचे से उभर कर आएगा */}
+        <div className="w-full max-w-md bg-white shadow-lg rounded-xl border p-8" data-aos="fade-up">
 
           <div className="flex flex-col items-center mb-6">
             <img src={Logo} alt="QuickAmbu" className="w-16" />
@@ -75,7 +85,6 @@ function UserLogin() {
 
           <form onSubmit={handleLogin} className="space-y-4">
 
-            {/* मोबाइल नंबर इनपुट */}
             <div>
               <label className="block mb-1 font-medium text-gray-700 text-sm">Mobile Number</label>
               <input
@@ -89,7 +98,6 @@ function UserLogin() {
               />
             </div>
 
-            {/* पासवर्ड इनपुट */}
             <div>
               <label className="block mb-1 font-medium text-gray-700 text-sm">Password</label>
               <input
@@ -121,9 +129,8 @@ function UserLogin() {
           </form>
         </div>
 
-        {/* ➔ 3. शानदार कस्टम पॉप-अप डिज़ाइन (सिर्फ तब दिखेगा जब लॉगिन सक्सेस होगा) */}
         {showSuccessPopup && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all" data-aos="zoom-in">
             <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl flex flex-col items-center text-center transform scale-100 animate-bounce-short">
 
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
@@ -133,7 +140,6 @@ function UserLogin() {
               <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Login Successful!</h2>
               <p className="text-gray-500 text-sm mb-6">You are securely logged into QuickAmbu.</p>
 
-              {/* ➔ 4. इस बटन पर क्लिक करने से डैशबोर्ड खुलेगा */}
               <button
                 onClick={() => navigate("/UserDashboard")}
                 className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/30 active:scale-95"

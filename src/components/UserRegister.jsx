@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Logo from "../assets/logo.png";
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, CheckCircle } from 'lucide-react'; // ➔ CheckCircle आइकॉन जोड़ा
+import { ArrowLeft, Upload, CheckCircle } from 'lucide-react'; 
 import axios from "axios";
+
+// 👇 1. AOS इम्पोर्ट किया
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 function UserRegister() {
   const [name, setName] = useState("");
@@ -11,10 +15,17 @@ function UserRegister() {
   const [password, setPassword] = useState("");
   const [photo, setPhoto] = useState(null);
   
-  // ➔ 1. रजिस्ट्रेशन सक्सेस पॉप-अप के लिए स्टेट
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
-  
   const navigate = useNavigate();
+
+  // 👇 2. पेज लोड होते ही एनिमेशन चालू करने के लिए useEffect
+  useEffect(() => {
+    AOS.init({
+      duration: 600, // 0.6 सेकंड का स्मूथ एनिमेशन
+      easing: 'ease-out-cubic',
+      once: true,
+    });
+  }, []);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -41,7 +52,6 @@ function UserRegister() {
       });
 
       if (response.data.success) {
-        // ➔ 2. ब्राउज़र का alert हटाकर अपना शानदार पॉप-अप दिखाओ!
         setShowSuccessPopup(true);
       }
     } catch (error) {
@@ -70,8 +80,10 @@ function UserRegister() {
         </div>
       </header>
 
-      <div className="min-h-screen bg-gradient-to-r from-red-50 to-white flex items-center justify-center px-4 py-10 relative">
-        <div className="w-full max-w-md bg-white shadow-lg rounded-xl border p-8">
+      <div className="min-h-screen bg-gradient-to-r from-red-50 to-white flex items-center justify-center px-4 py-10 relative overflow-hidden">
+        
+        {/* 👇 3. यहाँ data-aos="fade-up" लगाया है जिससे फॉर्म नीचे से उभर कर आएगा */}
+        <div className="w-full max-w-md bg-white shadow-lg rounded-xl border p-8" data-aos="fade-up">
 
           <div className="flex flex-col items-center mb-6">
             <img src={Logo} alt="QuickAmbu" className="w-16" />
@@ -85,7 +97,6 @@ function UserRegister() {
 
           <form onSubmit={handleRegister} className="space-y-4">
             
-            {/* प्रोफाइल फोटो */}
             <div>
               <label className="block mb-1 font-medium text-gray-700 text-sm">Profile Photo (Optional)</label>
               <div className="flex items-center gap-3 w-full border p-2 rounded-md bg-gray-50">
@@ -101,7 +112,6 @@ function UserRegister() {
               </div>
             </div>
 
-            {/* नाम इनपुट */}
             <div>
               <label className="block mb-1 font-medium text-gray-700 text-sm">Full Name</label>
               <input
@@ -114,7 +124,6 @@ function UserRegister() {
               />
             </div>
 
-            {/* मोबाइल नंबर इनपुट */}
             <div>
               <label className="block mb-1 font-medium text-gray-700 text-sm">Mobile Number</label>
               <input
@@ -128,7 +137,6 @@ function UserRegister() {
               />
             </div>
 
-            {/* ईमेल इनपुट */}
             <div>
               <label className="block mb-1 font-medium text-gray-700 text-sm">Email Address</label>
               <input
@@ -141,7 +149,6 @@ function UserRegister() {
               />
             </div>
 
-            {/* पासवर्ड इनपुट */}
             <div>
               <label className="block mb-1 font-medium text-gray-700 text-sm">Password</label>
               <input
@@ -168,9 +175,8 @@ function UserRegister() {
           </form>
         </div>
 
-        {/* ➔ 3. कस्टम सक्सेस पॉप-अप (रजिस्ट्रेशन के लिए) */}
         {showSuccessPopup && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all" data-aos="zoom-in">
             <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl flex flex-col items-center text-center transform scale-100">
               
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
@@ -180,7 +186,6 @@ function UserRegister() {
               <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Account Created! 🎉</h2>
               <p className="text-gray-500 text-sm mb-6">आपका अकाउंट सफलतापूर्वक बन गया है। अब आप लॉगिन कर सकते हैं।</p>
               
-              {/* ➔ 4. रजिस्ट्रेशन के बाद लॉगिन पेज पर भेजना सही रहता है */}
               <button 
                 onClick={() => navigate("/UserLogin")}
                 className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/30 active:scale-95"

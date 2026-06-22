@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Logo from "../assets/logo.png";
-import { motion } from "framer-motion";
 import axios from "axios"; // ➔ API कॉल के लिए
 import { useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+
+// 👇 1. AOS इम्पोर्ट किया
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 function AmbuRegister(){
     const navigate = useNavigate();
@@ -25,6 +28,15 @@ function AmbuRegister(){
     const [outsidePreview, setOutsidePreview] = useState(null);
 
     const [selectedFacilities, setSelectedFacilities] = useState([]);
+
+    // 👇 2. पेज लोड होते ही एनिमेशन चालू करने के लिए useEffect
+    useEffect(() => {
+        AOS.init({
+            duration: 600, // 0.6 सेकंड का स्मूथ एनिमेशन
+            easing: 'ease-out-cubic',
+            once: true,
+        });
+    }, []);
 
     const formatAadhar = (value) => {
         return value.replace(/\D/g, "").replace(/(\d{4})(?=\d)/g, "$1 ").trim();
@@ -55,22 +67,19 @@ function AmbuRegister(){
         setFormData({ ...formData, [name]: value });
     };
 
-    // ➔ फोटो को प्रिव्यू के लिए भी सेट करेगा और बैकएंड के लिए भी बचा कर रखेगा
     const handleImage = (e, setFile, setPreview) => {
         const file = e.target.files[0];
         if (file) {
-            setFile(file); // असली फाइल
-            setPreview(URL.createObjectURL(file)); // दिखाने वाला लिंक
+            setFile(file); 
+            setPreview(URL.createObjectURL(file)); 
         }
     };
 
-    // ➔ हमारा पुराना और मज़बूत सबमिट इंजन!
     const handleSubmit = async (e) => {
         e.preventDefault();
         
         const submitData = new FormData();
         
-        // सारे टेक्स्ट को पार्सल में डालें
         submitData.append("name", formData.name);
         submitData.append("mobile", formData.mobile);
         submitData.append("whatsapp", formData.whatsapp);
@@ -84,18 +93,16 @@ function AmbuRegister(){
         submitData.append("rcNo", formData.rcNo);
         submitData.append("facilities", JSON.stringify(selectedFacilities));
 
-        // फोटो को पार्सल में डालें
         if (ownerFile) submitData.append("ownerPhoto", ownerFile);
         if (insideFile) submitData.append("insidePhoto", insideFile);
         if (outsideFile) submitData.append("outsidePhoto", outsideFile);
 
         try {
-            // बैकएंड को भेजें (बिना Headers के, ताकि Multer खोल सके)
             const response = await axios.post("https://quickambu-backend-1.onrender.com/api/driver/register", submitData);
 
             if (response.data.success) {
                 alert("🎉 Success: " + response.data.message);
-                navigate("/DriverLogin"); // ➔ सक्सेस होने पर लॉगिन पेज पर भेजें
+                navigate("/DriverLogin"); 
             }
         } catch (error) {
             alert("❌ Error: " + (error.response?.data?.message || "Registration fail ho gaya!"));
@@ -113,28 +120,30 @@ function AmbuRegister(){
     return (
         <>
         <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/Role"><button className="text-gray-600 hover:text-gray-900 transition p-1 rounded-full hover:bg-gray-100">
-            <ArrowLeft className="w-5 h-5" />
-          </button></Link>
-          <div className="flex items-center gap-1.5">
-            <Link to="/"><img src={Logo} alt="logo" className="w-15"/></Link>
-            <div className="flex flex-col leading-none">
-              <span className="text-red-600 font-extrabold text-lg tracking-wide">QuickAmbu</span>
-              <span className="text-gray-400 text-[9px] uppercase tracking-widest font-bold">Ambulance</span>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Link to="/Role">
+                        <button className="text-gray-600 hover:text-gray-900 transition p-1 rounded-full hover:bg-gray-100">
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                    </Link>
+                    <div className="flex items-center gap-1.5">
+                        <Link to="/"><img src={Logo} alt="logo" className="w-15"/></Link>
+                        <div className="flex flex-col leading-none">
+                            <span className="text-red-600 font-extrabold text-lg tracking-wide">QuickAmbu</span>
+                            <span className="text-gray-400 text-[9px] uppercase tracking-widest font-bold">Ambulance</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-        </div>
-      </header>
-        <motion.div
-            className="min-h-screen py-10 px-4"
-            initial={{ y: 200, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-        >
-            <div className="max-w-5xl mx-auto bg-white rounded-xl border shadow-lg p-8">
+        </header>
+
+        {/* 👇 overflow-hidden लगाया है */}
+        <div className="min-h-screen py-10 px-4 overflow-hidden bg-slate-50">
+            
+            {/* 👇 3. यहाँ data-aos="fade-up" लगाया है */}
+            <div className="max-w-5xl mx-auto bg-white rounded-xl border shadow-lg p-8" data-aos="fade-up">
+                
                 <div className="flex flex-col items-center mb-6">
                     <div className="p-4 rounded-full text-white">
                         <img src={Logo} alt="Logo" className="w-20" />
@@ -213,7 +222,7 @@ function AmbuRegister(){
                     </div>
                 </form>
             </div>
-        </motion.div>
+        </div>
         </>
     );
 };
