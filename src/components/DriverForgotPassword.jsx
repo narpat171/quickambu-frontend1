@@ -55,7 +55,7 @@ const DriverForgotPassword = () => {
       const res = await axios.post(`${BASE_URL}/reset-password`, { email, newPassword });
       if (res.data.success) {
         alert("🎉 पासवर्ड सफलतापूर्वक बदल गया है! अब आप लॉगिन कर सकते हैं।");
-        navigate('/driver-login'); // लॉगिन पेज पर भेज दो
+        navigate('/DriverLogin'); // लॉगिन पेज पर भेज दो
       }
     } catch (err) {
       setError(err.response?.data?.message || "पासवर्ड बदलने में एरर!");
