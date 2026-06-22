@@ -11,6 +11,7 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // 👈 नया: पासवर्ड देखने/छुपाने के लिए
   const navigate = useNavigate();
 
   const handleSendOtp = async (e) => {
@@ -79,38 +80,43 @@ export default function ForgotPassword() {
         {error && <div className="bg-red-500/10 border border-red-500/50 text-red-400 text-xs font-bold p-3 rounded-xl text-center mb-4">{error}</div>}
         {successMsg && <div className="bg-green-500/10 border border-green-500/50 text-green-400 text-xs font-bold p-3 rounded-xl text-center mb-4 flex items-center justify-center gap-2"><CheckCircle2 size={16}/> {successMsg}</div>}
 
-        {step === 1 && (
-          <form onSubmit={handleSendOtp} className="space-y-5">
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"><Mail size={18} /></div>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-slate-900 border border-slate-700 text-white py-3.5 pl-12 pr-4 rounded-xl outline-none focus:border-red-500" placeholder="Email Address" />
-            </div>
-            <button type="submit" disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl shadow-lg">
-              {loading ? "Sending..." : "Send OTP to Email"}
-            </button>
-          </form>
-        )}
-
-        {step === 2 && (
-          <form onSubmit={handleVerifyOtp} className="space-y-5">
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"><KeyRound size={18} /></div>
-              <input type="text" maxLength="4" required value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-900 border border-slate-700 text-white py-3.5 pl-12 pr-4 rounded-xl text-center tracking-[1em] font-bold outline-none focus:border-red-500" placeholder="----" />
-            </div>
-            <button type="submit" disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl shadow-lg">
-              {loading ? "Verifying..." : "Verify OTP"}
-            </button>
-          </form>
-        )}
-
+       {/* 🟢 STEP 3 FORM */}
         {step === 3 && (
-          <form onSubmit={handleResetPassword} className="space-y-5">
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"><Lock size={18} /></div>
-              <input type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-slate-900 border border-slate-700 text-white py-3.5 pl-12 pr-4 rounded-xl outline-none focus:border-red-500" placeholder="Enter New Password" />
+          <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
+            <p style={{ fontSize: '14px', color: '#4b5563' }}>अपना नया पासवर्ड बनाएँ:</p>
+            
+            {/* 👇 पासवर्ड वाला डिब्बा और आँख का बटन */}
+            <div style={{ position: 'relative', width: '100%' }}>
+              <input 
+                type={showPassword ? "text" : "password"} // 👈 जादू यहाँ है (text या password)
+                placeholder="New Password" 
+                value={newPassword} 
+                onChange={(e) => setNewPassword(e.target.value)} 
+                required 
+                style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
+              />
+              
+              {/* 👁️ आँख वाला बटन */}
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)} 
+                style={{ 
+                  position: 'absolute', 
+                  right: '10px', 
+                  top: '50%', 
+                  transform: 'translateY(-50%)', 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  fontSize: '18px' 
+                }}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
             </div>
-            <button type="submit" disabled={loading} className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-xl shadow-lg">
-              {loading ? "Updating..." : "Update Password"}
+
+            <button type="submit" disabled={loading} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '10px', borderRadius: '5px', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
+              {loading ? "पासवर्ड बदल रहे हैं..." : "Reset Password"}
             </button>
           </form>
         )}
