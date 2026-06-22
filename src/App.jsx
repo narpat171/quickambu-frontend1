@@ -157,6 +157,7 @@ export default function App() {
                 <p className="hover:text-red-500 transition-colors cursor-pointer">Register/Login</p>
               </Link>
             )}
+           <Link to="/developers"><p className="hover:text-red-500 transition-colors cursor-pointer">Developers</p></Link>
             <p className="hover:text-red-500 transition-colors cursor-pointer">Contact Us</p>
           </nav>
 
@@ -186,6 +187,7 @@ export default function App() {
             ) : (
               <Link to="/Role" onClick={() => setIsMenuOpen(false)} className="text-slate-600 hover:text-red-500 font-medium px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">Register/Login</Link>
             )}
+             <Link to="/developers" onClick={() => setIsMenuOpen(false)} className="text-slate-600 hover:text-red-500 font-medium px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">Developers</Link>
             <p onClick={() => setIsMenuOpen(false)} className="text-slate-600 hover:text-red-500 font-medium px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">Contact Us</p>
           </nav>
         </div>
