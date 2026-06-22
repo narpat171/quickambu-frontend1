@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, KeyRound, Lock, ArrowLeft, CheckCircle2 } from 'lucide-react'; 
+import { Mail, KeyRound, Lock, ArrowLeft, CheckCircle2, Eye, EyeOff } from 'lucide-react'; 
 import axios from 'axios'; 
 
 export default function ForgotPassword() {
@@ -11,7 +11,7 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // 👈 नया: पासवर्ड देखने/छुपाने के लिए
+  const [showPassword, setShowPassword] = useState(false); // 👈 पासवर्ड देखने/छुपाने के लिए
   const navigate = useNavigate();
 
   const handleSendOtp = async (e) => {
@@ -58,6 +58,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans relative overflow-hidden">
+      {/* Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-red-600/20 rounded-full blur-[100px] pointer-events-none"></div>
 
       <div className="max-w-md w-full bg-slate-800 rounded-3xl border border-slate-700 shadow-2xl p-8 relative z-10">
@@ -65,6 +66,7 @@ export default function ForgotPassword() {
           <ArrowLeft className="w-6 h-6" />
         </Link>
 
+        {/* Header Section */}
         <div className="text-center mb-8 mt-4">
           <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-500/20">
             {step === 1 ? <Mail size={32} /> : step === 2 ? <KeyRound size={32} /> : <Lock size={32} />}
@@ -77,49 +79,82 @@ export default function ForgotPassword() {
           </p>
         </div>
 
+        {/* Messages */}
         {error && <div className="bg-red-500/10 border border-red-500/50 text-red-400 text-xs font-bold p-3 rounded-xl text-center mb-4">{error}</div>}
         {successMsg && <div className="bg-green-500/10 border border-green-500/50 text-green-400 text-xs font-bold p-3 rounded-xl text-center mb-4 flex items-center justify-center gap-2"><CheckCircle2 size={16}/> {successMsg}</div>}
 
-       {/* 🟢 STEP 3 FORM */}
-        {step === 3 && (
-          <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
-            <p style={{ fontSize: '14px', color: '#4b5563' }}>अपना नया पासवर्ड बनाएँ:</p>
-            
-            {/* 👇 पासवर्ड वाला डिब्बा और आँख का बटन */}
-            <div style={{ position: 'relative', width: '100%' }}>
+        {/* 🟢 STEP 1 FORM (ईमेल डालने के लिए) */}
+        {step === 1 && (
+          <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
+            <div>
+              <label className="text-sm font-medium text-slate-400 mb-1.5 block">Email Address</label>
               <input 
-                type={showPassword ? "text" : "password"} // 👈 जादू यहाँ है (text या password)
-                placeholder="New Password" 
-                value={newPassword} 
-                onChange={(e) => setNewPassword(e.target.value)} 
+                type="email" 
+                placeholder="name@example.com" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
                 required 
-                style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #d1d5db', outline: 'none', boxSizing: 'border-box' }}
+                className="w-full bg-slate-900 border border-slate-700 text-white p-3.5 rounded-xl outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all placeholder:text-slate-600"
               />
-              
-              {/* 👁️ आँख वाला बटन */}
-              <button 
-                type="button" 
-                onClick={() => setShowPassword(!showPassword)} 
-                style={{ 
-                  position: 'absolute', 
-                  right: '10px', 
-                  top: '50%', 
-                  transform: 'translateY(-50%)', 
-                  background: 'none', 
-                  border: 'none', 
-                  cursor: 'pointer', 
-                  fontSize: '18px' 
-                }}
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </button>
             </div>
-
-            <button type="submit" disabled={loading} style={{ backgroundColor: '#f59e0b', color: 'white', padding: '10px', borderRadius: '5px', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
-              {loading ? "पासवर्ड बदल रहे हैं..." : "Reset Password"}
+            <button type="submit" disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 mt-2">
+              {loading ? "Sending..." : "Send OTP"}
             </button>
           </form>
         )}
+
+        {/* 🟢 STEP 2 FORM (OTP डालने के लिए) */}
+        {step === 2 && (
+          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+            <div>
+              <label className="text-sm font-medium text-slate-400 mb-1.5 block">Enter 4-digit OTP</label>
+              <input 
+                type="text" 
+                maxLength={4}
+                placeholder="1234" 
+                value={otp} 
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} 
+                required 
+                className="w-full bg-slate-900 border border-slate-700 text-white p-3.5 rounded-xl outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all placeholder:text-slate-600 text-center text-2xl tracking-[0.5em] font-mono"
+              />
+            </div>
+            <button type="submit" disabled={loading} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 mt-2">
+              {loading ? "Verifying..." : "Verify OTP"}
+            </button>
+          </form>
+        )}
+
+        {/* 🟢 STEP 3 FORM (नया पासवर्ड बनाने के लिए) */}
+        {step === 3 && (
+          <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
+            <div>
+              <label className="text-sm font-medium text-slate-400 mb-1.5 block">New Password</label>
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Enter new password" 
+                  value={newPassword} 
+                  onChange={(e) => setNewPassword(e.target.value)} 
+                  required 
+                  className="w-full bg-slate-900 border border-slate-700 text-white p-3.5 pr-12 rounded-xl outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all placeholder:text-slate-600"
+                />
+                
+                {/* 👁️ आँख वाला बटन */}
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)} 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+            <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 mt-2">
+              {loading ? "Resetting..." : "Reset Password"}
+            </button>
+          </form>
+        )}
+
       </div>
     </div>
   );
