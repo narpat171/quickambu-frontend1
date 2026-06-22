@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, KeyRound, Lock, ArrowLeft, CheckCircle2, Eye, EyeOff } from 'lucide-react'; 
+// 👇 1. यहाँ Loader2 इम्पोर्ट किया है
+import { Mail, KeyRound, Lock, ArrowLeft, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react'; 
 import axios from 'axios'; 
 
 export default function ForgotPassword() {
@@ -11,7 +12,7 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // 👈 पासवर्ड देखने/छुपाने के लिए
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSendOtp = async (e) => {
@@ -61,7 +62,19 @@ export default function ForgotPassword() {
       {/* Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-red-600/20 rounded-full blur-[100px] pointer-events-none"></div>
 
-      <div className="max-w-md w-full bg-slate-800 rounded-3xl border border-slate-700 shadow-2xl p-8 relative z-10">
+      {/* 👇 यहाँ overflow-hidden लगाया है ताकि लोडर कार्ड के बाहर न निकले */}
+      <div className="max-w-md w-full bg-slate-800 rounded-3xl border border-slate-700 shadow-2xl p-8 relative z-10 overflow-hidden">
+        
+        {/* 🔴 RED LOADING SPINNER OVERLAY (यह सिर्फ तब दिखेगा जब loading true होगी) */}
+        {loading && (
+          <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center rounded-3xl transition-all">
+            <Loader2 className="w-14 h-14 text-red-500 animate-spin mb-3" />
+            <span className="text-red-400 font-bold tracking-widest animate-pulse text-sm">
+              {step === 1 ? "SENDING OTP..." : step === 2 ? "VERIFYING..." : "UPDATING PASSWORD..."}
+            </span>
+          </div>
+        )}
+
         <Link to="/UserLogin" className="absolute top-6 left-6 text-slate-400 hover:text-white transition-colors">
           <ArrowLeft className="w-6 h-6" />
         </Link>
@@ -98,7 +111,7 @@ export default function ForgotPassword() {
               />
             </div>
             <button type="submit" disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 mt-2">
-              {loading ? "Sending..." : "Send OTP"}
+              Send OTP
             </button>
           </form>
         )}
@@ -119,7 +132,7 @@ export default function ForgotPassword() {
               />
             </div>
             <button type="submit" disabled={loading} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 mt-2">
-              {loading ? "Verifying..." : "Verify OTP"}
+              Verify OTP
             </button>
           </form>
         )}
@@ -150,7 +163,7 @@ export default function ForgotPassword() {
               </div>
             </div>
             <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all disabled:opacity-50 mt-2">
-              {loading ? "Resetting..." : "Reset Password"}
+              Reset Password
             </button>
           </form>
         )}
