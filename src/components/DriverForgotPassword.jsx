@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 const DriverForgotPassword = () => {
   // 👇 यहाँ अपना Render या Glitch वाला बैकएंड लिंक डालें
-  const BASE_URL = "https://yahan-apna-backend-link-dale.onrender.com/api/driver"; 
+  const BASE_URL = "https://quickambu-backend-1.onrender.com"; 
 
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
