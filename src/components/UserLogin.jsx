@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Logo from "../assets/logo.png";
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle } from 'lucide-react'; 
+// 👇 1. Loader2 इम्पोर्ट किया
+import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react'; 
 import axios from "axios";
 
-// 👇 1. AOS इम्पोर्ट किया
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
@@ -12,13 +12,15 @@ function UserLogin() {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  
+  // 👇 2. नेविगेशन लोडर के लिए नया स्टेट
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const navigate = useNavigate();
 
-  // 👇 2. पेज लोड होते ही एनिमेशन चालू करने के लिए useEffect
   useEffect(() => {
     AOS.init({
-      duration: 600, // 0.6 सेकंड का स्मूथ एनिमेशन
+      duration: 600, 
       easing: 'ease-out-cubic',
       once: true,
     });
@@ -47,6 +49,14 @@ function UserLogin() {
     }
   };
 
+  // 👇 3. नेविगेशन के लिए नया फंक्शन (जो लोडर दिखाएगा)
+  const handleNavigate = (path) => {
+    setIsNavigating(true); // लोडर चालू करो
+    setTimeout(() => {
+      navigate(path); // 0.8 सेकंड बाद दूसरे पेज पर भेजो
+    }, 800); 
+  };
+
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -70,8 +80,18 @@ function UserLogin() {
 
       <div className="min-h-screen bg-linear-to-r from-red-50 to-white flex items-center justify-center px-4 py-10 relative overflow-hidden">
         
-        {/* 👇 3. यहाँ data-aos="fade-up" लगाया है जिससे फॉर्म नीचे से उभर कर आएगा */}
-        <div className="w-full max-w-md bg-white shadow-lg rounded-xl border p-8" data-aos="fade-up">
+        {/* 👇 यहाँ relative और overflow-hidden ज़रूरी है ताकि लोडर कार्ड के अंदर रहे */}
+        <div className="w-full max-w-md bg-white shadow-lg rounded-xl border p-8 relative overflow-hidden" data-aos="fade-up">
+
+          {/* 👇 4. RED LOADING OVERLAY (पेज बदलने वाला इफ़ेक्ट) */}
+          {isNavigating && (
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center transition-all">
+              <Loader2 className="w-12 h-12 text-red-600 animate-spin mb-2" />
+              <span className="text-red-600 font-bold tracking-widest animate-pulse text-xs">
+                LOADING...
+              </span>
+            </div>
+          )}
 
           <div className="flex flex-col items-center mb-6">
             <img src={Logo} alt="QuickAmbu" className="w-16" />
@@ -116,37 +136,47 @@ function UserLogin() {
             >
               Login securely
             </button>
+            
             <div className="flex justify-end mt-2">
-              <Link to="/forgot-password" className="text-sm text-red-500 hover:text-red-400 font-bold transition-colors cursor-pointer">
+              {/* 👇 5. Link हटाकर button लगाया और onClick इफ़ेक्ट जोड़ दिया */}
+              <button 
+                type="button" 
+                onClick={() => handleNavigate('/forgot-password')} 
+                className="text-sm text-red-500 hover:text-red-400 font-bold transition-colors cursor-pointer bg-transparent border-none p-0 outline-none"
+              >
                 Forgot Password?
-              </Link>
+              </button>
             </div>
 
             <div className="text-center pt-2">
               <span className="text-gray-500 text-xs">Don't have an account? </span>
-              <Link to="/UserRegister" className="text-blue-600 text-xs font-semibold hover:underline">Register here</Link>
+              {/* 👇 यहाँ भी इफ़ेक्ट जोड़ दिया */}
+              <button 
+                type="button" 
+                onClick={() => handleNavigate('/UserRegister')} 
+                className="text-blue-600 text-xs font-semibold hover:underline bg-transparent border-none p-0 cursor-pointer outline-none"
+              >
+                Register here
+              </button>
             </div>
           </form>
         </div>
 
+        {/* Success Popup (Login होने पर) */}
         {showSuccessPopup && (
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all" data-aos="zoom-in">
             <div className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl flex flex-col items-center text-center transform scale-100 animate-bounce-short">
-
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-
               <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Login Successful!</h2>
               <p className="text-gray-500 text-sm mb-6">You are securely logged into QuickAmbu.</p>
-
               <button
                 onClick={() => navigate("/UserDashboard")}
                 className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/30 active:scale-95"
               >
                 Continue to Dashboard ➔
               </button>
-
             </div>
           </div>
         )}
