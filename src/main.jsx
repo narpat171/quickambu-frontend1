@@ -22,6 +22,7 @@ import AmbulanceDashboard from "./components/AmbulanceDashboard.jsx";
 import AdminDashboard from "./components/AdminDashboard.jsx"; 
 import AdminLogin from "./components/AdminLogin.jsx";
 import DriverForgotPassword from "./components/DriverForgotPassword.jsx";
+import Developers from "./components/Developers.jsx";
 
 const router = createBrowserRouter([
   {
@@ -77,6 +78,10 @@ const router = createBrowserRouter([
     path: '/driver-forgot-password',
     element: <DriverForgotPassword />,
   },
+  {
+   path: "/developers",
+   element: <Developers />
+},
 ]);
 
 createRoot(document.getElementById("root")).render(
