@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { RiDeleteBin6Line } from "react-icons/ri";
-import { IoWarning, IoCheckmark, IoClose, IoLocate, IoCloseCircle, IoCall } from "react-icons/io5";
+import { IoWarning, IoCheckmark, IoClose, IoLocate, IoCloseCircle, IoCall, IoVolumeMute } from "react-icons/io5";
 import { FaLocationDot } from "react-icons/fa6";
 import { MdDirectionsCar, MdPerson, MdPhone } from "react-icons/md";
 import { LogOut } from 'lucide-react'; 
@@ -22,8 +22,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a = 
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c; // दूरी किलोमीटर में मिलेगी
 };
@@ -78,14 +77,12 @@ export default function AdminDashboard() {
   const audioContextRef = useRef(null);
   const oscillatorRef = useRef(null);
 
-  // 👉 Security Guard: अगर एडमिन लॉगिन नहीं है, तो तुरंत बाहर निकालो
   useEffect(() => {
     const isAuth = localStorage.getItem("adminAuth");
     if (isAuth !== "true") {
       navigate("/AdminLogin");
     }
 
-    // 📍 टेस्टिंग के लिए राजस्थान के अलग-अलग शहरों की असली लोकेशन 
     const rajasthanCoords = [
       [28.2900, 74.9700], // चुरू शहर
       [28.6700, 75.0300], // तारानगर 
@@ -105,8 +102,8 @@ export default function AdminDashboard() {
             type: "ALS (ICU)",
             status: "Available",
             distance: "Click 'Search Nearest' to Calculate",
-            kmValue: 99999, // डिफ़ॉल्ट बहुत ज़्यादा ताकि सॉर्टिंग सही हो
-            coords: rajasthanCoords[index % rajasthanCoords.length], // 👈 हर ड्राइवर को असली लोकेशन दी गई
+            kmValue: 99999,
+            coords: rajasthanCoords[index % rajasthanCoords.length], 
             images: [
               "https://th.bing.com/th/id/OIP.q4ZWBwsbzhHjYzDyiaV_twHaE8?w=161&h=150&c=6&r=0&o=7&dpr=1.5&pid=1.7&rm=3",
               "https://static.vecteezy.com/system/resources/previews/050/966/015/non_2x/modern-ambulance-interior-with-equipment-for-medical-emergency-photo.jpg"
@@ -132,18 +129,20 @@ export default function AdminDashboard() {
         location: newReq.location || "Live GPS Location",
         emergencyType: newReq.emergency,
         time: newReq.time,
-        coords: newReq.coords // 👈 मरीज़ की असली लोकेशन
+        coords: newReq.coords 
       });
     });
 
     socket.on("journey-status-updated", (data) => {
-      setSentRequests(prev => prev.map(req => req.id === data.reqId ? { ...req, status: getJourneyLabel(data.step) } : req));
+      const statusLabel = getJourneyLabel(data.step);
+      // ➔ FIX 3: Status को Sent Requests और User History दोनों में अपडेट करें (ताकि Completed दिखे)
+      setSentRequests(prev => prev.map(req => req.id === data.reqId ? { ...req, status: statusLabel } : req));
+      setIncomingRequestsHistory(prev => prev.map(req => req.id === data.reqId ? { ...req, status: statusLabel } : req));
     });
 
     socket.on("driver-location-update", (data) => {
       setSentRequests(prev => prev.map(req => {
         if (req.id === data.reqId) {
-          // 📍 लाइव दूरी दोबारा नापें
           const newLiveDistance = calculateDistance(req.userLat, req.userLng, data.lat, data.lng).toFixed(1);
           return { ...req, ambLat: data.lat, ambLng: data.lng, distanceKm: `${newLiveDistance} km` }; 
         }
@@ -166,9 +165,10 @@ export default function AdminDashboard() {
     };
   }, []);
 
+  // ➔ FIX 3: Labels को अपडेट कर दिया गया है ताकि 7वें स्टेप पर 'Completed' आ जाए
   const getJourneyLabel = (step) => {
-    const labels = ["Dispatched", "Ambulance Started", "On The Way", "Reached Patient", "Patient On Board", "Reached Hospital", "Trip Completed!"];
-    return labels[step] || "Updating...";
+    const labels = ["Dispatched", "Ambulance Started", "On The Way", "Reached Patient", "Patient On Board", "Reached Hospital", "Completed!", "Completed!"];
+    return labels[step] || "Completed!";
   };
 
   useEffect(() => {
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
       }
     } else {
       stopAlertTone();
-      setIsLocationFiltered(false);
+      // ➔ FIX 2: यहाँ से `setIsLocationFiltered(false)` हटा दिया ताकि एम्बुलेंस गायब न हों!
     }
     return () => stopAlertTone();
   }, [currentLiveUser]);
@@ -250,7 +250,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // 🚀 100% REAL DISTANCE CALCULATION
   const handleLocationSearchFilter = () => {
     if (!currentLiveUser || !currentLiveUser.coords) {
       setCustomNotification({ show: true, title: "Location Error", message: "मरीज़ की लोकेशन नहीं मिल पा रही है!", type: "error" });
@@ -337,6 +336,10 @@ export default function AdminDashboard() {
     };
 
     setSentRequests([newDispatch, ...sentRequests]);
+    
+    // ➔ FIX 3: जैसे ही डिस्पैच हो, User History में भी 'Dispatched' कर दो!
+    setIncomingRequestsHistory(prev => prev.map(req => req.id === generatedReqId || req.id === currentLiveUser?.id ? { ...req, status: "Dispatched" } : req));
+    
     setAmbulances(prev => prev.map(a => a.id === ambId ? { ...a, status: "Busy" } : a));
     setDispatchedAmbulanceIds(prev => [...prev, ambId]);
 
@@ -378,7 +381,6 @@ export default function AdminDashboard() {
           </div>
           <div className="h-8 w-px bg-slate-800 hidden md:block"></div>
           
-          {/* 👉 ADMIN LOGOUT BUTTON */}
           <button onClick={() => { localStorage.removeItem("adminAuth"); navigate("/"); }} className="flex items-center gap-2 bg-slate-800/50 hover:bg-red-500/10 text-slate-300 hover:text-red-400 border border-slate-700 hover:border-red-500/50 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer shadow-sm">
             <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Exit Control</span>
           </button>
@@ -431,9 +433,18 @@ export default function AdminDashboard() {
                 {currentLiveUser ? "LIVE EMERGENCY INCOMING SIGNAL DETECTED" : "INCOMING USER REQUEST PANEL"}
               </h3>
             </div>
-            {currentLiveUser && (
-              <span className="bg-red-600 text-white font-mono text-[10px] md:text-xs px-2.5 py-0.5 rounded-full font-bold shadow-xs">Time: {currentLiveUser.time || "Live"}</span>
-            )}
+            
+            {/* ➔ FIX 1: STOP SIREN BUTTON (सिर्फ तभी दिखेगा जब सायरन बज रहा हो / यूजर लाइव हो) */}
+            <div className="flex items-center gap-3">
+              {currentLiveUser && (
+                <button onClick={stopAlertTone} className="bg-red-100 hover:bg-red-200 text-red-700 font-bold px-3 py-1.5 rounded-lg text-xs md:text-sm animate-pulse flex items-center gap-1.5 transition-all cursor-pointer border border-red-300">
+                  <IoVolumeMute className="text-lg" /> Stop Siren
+                </button>
+              )}
+              {currentLiveUser && (
+                <span className="bg-red-600 text-white font-mono text-[10px] md:text-xs px-2.5 py-1 rounded-full font-bold shadow-xs">Time: {currentLiveUser.time || "Live"}</span>
+              )}
+            </div>
           </div>
 
           {!currentLiveUser && (
@@ -505,82 +516,73 @@ export default function AdminDashboard() {
         {/* TAB 1: LIVE CONTROL */}
         {activeTab === "live" && (
           <div className="space-y-4 transition-all duration-300 animate-fade-in">
-            {!isLocationFiltered ? (
-              <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-10 text-center">
-                <IoLocate className="text-4xl text-gray-300 mx-auto mb-3" />
-                <h3 className="text-sm font-bold text-gray-400">No Ambulances Loaded</h3>
-                <p className="text-xs text-gray-300 mt-1">Click "Search Nearest Ambulance" above to find nearby ambulances</p>
-              </div>
-            ) : (
-              <>
-                <div className="flex justify-between items-center">
-                  <h2 className="text-sm md:text-base font-extrabold text-gray-950 flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-green-500 animate-ping"></span>
-                    Nearby Ambulances Found
-                  </h2>
-                  <button onClick={() => setIsLocationFiltered(false)} className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer">Clear Results</button>
-                </div>
+            {/* ➔ FIX 2: यहाँ से "No Ambulances Loaded" वाला डिब्बा पूरी तरह हटा दिया है */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-sm md:text-base font-extrabold text-gray-950 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-green-500 animate-ping"></span>
+                Available Ambulances Pool
+              </h2>
+              {isLocationFiltered && <button onClick={() => setIsLocationFiltered(false)} className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer bg-red-50 px-2 py-1 rounded-md">Clear Distance Sort</button>}
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-start">
-                  {displayedAmbulances.map((amb) => {
-                    const imgIndex = imgIndexes[amb.id] || 0;
-                    const isDispatched = dispatchedAmbulanceIds.includes(amb.id);
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-start">
+              {displayedAmbulances.map((amb) => {
+                const imgIndex = imgIndexes[amb.id] || 0;
+                const isDispatched = dispatchedAmbulanceIds.includes(amb.id);
 
-                    return (
-                      <div key={amb.id} className={`bg-white rounded-2xl border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg relative ${isLocationFiltered ? "border-green-300 ring-2 ring-green-50/50" : "border-gray-200"}`}>
+                return (
+                  <div key={amb.id} className={`bg-white rounded-2xl border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg relative ${isLocationFiltered ? "border-green-300 ring-2 ring-green-50/50" : "border-gray-200"}`}>
 
-                        <button onClick={() => setDeleteTargetId(amb.id)} className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-red-600 text-white text-[10px] md:text-xs font-bold h-6 w-6 rounded-full flex items-center justify-center transition-all duration-150 backdrop-blur-sm shadow-sm cursor-pointer" title="Remove Ambulance from Pool">
-                          <RiDeleteBin6Line />
-                        </button>
+                    <button onClick={() => setDeleteTargetId(amb.id)} className="absolute top-2 right-2 z-10 bg-black/50 hover:bg-red-600 text-white text-[10px] md:text-xs font-bold h-6 w-6 rounded-full flex items-center justify-center transition-all duration-150 backdrop-blur-sm shadow-sm cursor-pointer" title="Remove Ambulance from Pool">
+                      <RiDeleteBin6Line />
+                    </button>
 
-                        <div className="h-36 md:h-44 w-full bg-gray-100 relative overflow-hidden shrink-0">
-                          <img src={amb.images[imgIndex]} alt="Ambulance" referrerPolicy="no-referrer" className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" />
-                        </div>
-                        <div className="p-4 md:p-5 flex-1 flex flex-col justify-between space-y-4">
+                    <div className="h-36 md:h-44 w-full bg-gray-100 relative overflow-hidden shrink-0">
+                      <img src={amb.images[imgIndex]} alt="Ambulance" referrerPolicy="no-referrer" className="w-full h-full object-cover transition-opacity duration-1000 ease-in-out" />
+                    </div>
+                    <div className="p-4 md:p-5 flex-1 flex flex-col justify-between space-y-4">
+                      <div>
+                        <div className="flex justify-between items-start gap-2">
                           <div>
-                            <div className="flex justify-between items-start gap-2">
-                              <div>
-                                <span className="text-[9px] md:text-[10px] font-black uppercase bg-gray-100 px-2 py-0.5 rounded-sm text-gray-600 break-all">{amb.type}</span>
-                                <h3 className="text-sm md:text-base font-bold text-gray-950 mt-1">{amb.driver}</h3>
-                              </div>
-                              <span className={`text-[10px] md:text-xs font-bold px-2 py-0.5 md:py-1 rounded-full whitespace-nowrap transition-all duration-300 ${isDispatched ? "bg-blue-50 text-blue-700 animate-pulse" : amb.status === "Available" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
-                                ● {isDispatched ? "Dispatched" : amb.status}
-                              </span>
-                            </div>
-                            <div className="mt-3 space-y-1.5 text-xs text-gray-600">
-                              <p className="flex items-center gap-1.5"><MdPhone className="text-gray-400 shrink-0" /> <strong>Phone:</strong> {amb.phone}</p>
-                              <p className="flex items-center gap-1.5"><FaLocationDot className="text-gray-400 shrink-0" /> <strong>Distance:</strong> <span className={isLocationFiltered ? "text-green-600 font-extrabold" : ""}>{amb.distance}</span></p>
-                            </div>
+                            <span className="text-[9px] md:text-[10px] font-black uppercase bg-gray-100 px-2 py-0.5 rounded-sm text-gray-600 break-all">{amb.type}</span>
+                            <h3 className="text-sm md:text-base font-bold text-gray-950 mt-1">{amb.driver}</h3>
                           </div>
-
-                          <div className="pt-1">
-                            {isDispatched ? (
-                              <a href={`tel:${formatPhoneNumber(amb.phone)}`} className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all transform active:scale-95 duration-150 text-center animate-scale-up cursor-pointer">
-                                <IoCall /> CALL DRIVER
-                              </a>
-                            ) : (
-                              <>
-                                <button onClick={() => setOpenFormId(openFormId === amb.id ? null : amb.id)} className={`w-full text-white text-xs font-bold py-2.5 rounded-xl transition-all duration-200 transform active:scale-95 cursor-pointer ${openFormId === amb.id ? "bg-red-600 hover:bg-red-700 shadow-sm" : "bg-green-700 hover:bg-green-800"}`}>
-                                  {openFormId === amb.id ? "Cancel / Close" : "Assign & Send"}
-                                </button>
-                                {openFormId === amb.id && (
-                                  <div className="mt-3 p-3 md:p-4 border border-gray-200 bg-gradient-to-br from-gray-50 to-white rounded-xl space-y-3 transition-all duration-300 origin-top animate-slide-down shadow-inner">
-                                    <input type="text" placeholder="Patient Name" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="w-full p-2 bg-white border rounded-md text-xs md:text-sm focus:ring-1 focus:ring-red-500 focus:outline-none transition-all" />
-                                    <input type="text" placeholder="Phone Number" value={patientPhone} maxLength={10} onChange={(e) => setPatientPhone(e.target.value)} className="w-full p-2 bg-white border rounded-md text-xs md:text-sm focus:ring-1 focus:ring-red-500 focus:outline-none transition-all" />
-                                    <input type="text" placeholder="Emergency Type" value={patientEmergency} onChange={(e) => setPatientEmergency(e.target.value)} className="w-full p-2 bg-white border rounded-md text-xs md:text-sm focus:ring-1 focus:ring-red-500 focus:outline-none transition-all" />
-                                    <button onClick={() => sendAmbulanceRequest(amb.id)} className="w-full bg-green-700 hover:bg-green-800 text-white py-2 rounded-md font-bold text-xs transition-all transform active:scale-95 cursor-pointer">Confirm & Dispatch</button>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
+                          <span className={`text-[10px] md:text-xs font-bold px-2 py-0.5 md:py-1 rounded-full whitespace-nowrap transition-all duration-300 ${isDispatched ? "bg-blue-50 text-blue-700 animate-pulse" : amb.status === "Available" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
+                            ● {isDispatched ? "Dispatched" : amb.status}
+                          </span>
+                        </div>
+                        <div className="mt-3 space-y-1.5 text-xs text-gray-600">
+                          <p className="flex items-center gap-1.5"><MdPhone className="text-gray-400 shrink-0" /> <strong>Phone:</strong> {amb.phone}</p>
+                          <p className="flex items-center gap-1.5"><FaLocationDot className="text-gray-400 shrink-0" /> <strong>Distance:</strong> <span className={isLocationFiltered ? "text-green-600 font-extrabold" : ""}>{amb.distance}</span></p>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+
+                      <div className="pt-1">
+                        {isDispatched ? (
+                          <a href={`tel:${formatPhoneNumber(amb.phone)}`} className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all transform active:scale-95 duration-150 text-center animate-scale-up cursor-pointer">
+                            <IoCall /> CALL DRIVER
+                          </a>
+                        ) : (
+                          <>
+                            <button onClick={() => setOpenFormId(openFormId === amb.id ? null : amb.id)} className={`w-full text-white text-xs font-bold py-2.5 rounded-xl transition-all duration-200 transform active:scale-95 cursor-pointer ${openFormId === amb.id ? "bg-red-600 hover:bg-red-700 shadow-sm" : "bg-green-700 hover:bg-green-800"}`}>
+                              {openFormId === amb.id ? "Cancel / Close" : "Assign & Send"}
+                            </button>
+                            {openFormId === amb.id && (
+                              <div className="mt-3 p-3 md:p-4 border border-gray-200 bg-gradient-to-br from-gray-50 to-white rounded-xl space-y-3 transition-all duration-300 origin-top animate-slide-down shadow-inner">
+                                <input type="text" placeholder="Patient Name" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="w-full p-2 bg-white border rounded-md text-xs md:text-sm focus:ring-1 focus:ring-red-500 focus:outline-none transition-all" />
+                                <input type="text" placeholder="Phone Number" value={patientPhone} maxLength={10} onChange={(e) => setPatientPhone(e.target.value)} className="w-full p-2 bg-white border rounded-md text-xs md:text-sm focus:ring-1 focus:ring-red-500 focus:outline-none transition-all" />
+                                <input type="text" placeholder="Emergency Type" value={patientEmergency} onChange={(e) => setPatientEmergency(e.target.value)} className="w-full p-2 bg-white border rounded-md text-xs md:text-sm focus:ring-1 focus:ring-red-500 focus:outline-none transition-all" />
+                                <button onClick={() => sendAmbulanceRequest(amb.id)} className="w-full bg-green-700 hover:bg-green-800 text-white py-2 rounded-md font-bold text-xs transition-all transform active:scale-95 cursor-pointer">Confirm & Dispatch</button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -614,7 +616,8 @@ export default function AdminDashboard() {
                         <td className="p-2.5 font-medium">{req.patientName} ({req.patientPhone})</td>
                         <td className="p-2.5 text-gray-500">{req.time}</td>
                         <td className="p-2.5">
-                          <span className={`text-[10px] md:text-xs px-2 py-0.5 rounded-full font-bold ${req.status === "Trip Completed!" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700 animate-pulse"}`}>
+                          {/* ➔ FIX 3: अगर स्टेटस Completed है तो हरा रंग आएगा */}
+                          <span className={`text-[10px] md:text-xs px-2 py-0.5 rounded-full font-bold ${req.status.includes("Completed") ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700 animate-pulse"}`}>
                             {req.status}
                           </span>
                         </td>
@@ -652,7 +655,10 @@ export default function AdminDashboard() {
                       </div>
                       <p className="text-xs md:text-sm font-medium text-gray-800 break-all">{req.name} ({req.phone}) <br />{req.location}</p>
                     </div>
-                    <span className="bg-amber-500 text-white font-bold text-[10px] md:text-xs px-2.5 py-1 rounded-md shrink-0">{req.status}</span>
+                    {/* ➔ FIX 3: अगर स्टेटस Completed है तो हरा रंग का बैज आएगा */}
+                    <span className={`${req.status.includes("Completed") ? "bg-emerald-500" : "bg-amber-500"} text-white font-bold text-[10px] md:text-xs px-2.5 py-1 rounded-md shrink-0`}>
+                      {req.status}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -660,7 +666,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 🗺️ TRACKING MODAL (असली लोकेशन के साथ) */}
+        {/* 🗺️ TRACKING MODAL */}
         {trackingData && (
           <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all duration-300 animate-fade-in">
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-slate-800 max-w-lg w-full p-6 space-y-4 transform transition-all duration-300 animate-scale-up relative">
@@ -684,10 +690,9 @@ export default function AdminDashboard() {
               </div>
               
               <div className="w-full h-80 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200 relative shadow-inner">
-                {/* 👇 यह रहा आपका परफेक्ट Google Maps का लिंक */}
                 <iframe
                   title="Live Route"
-                  src={`https://maps.google.com/maps?saddr=${trackingData.ambLat},${trackingData.ambLng}&daddr=${trackingData.userLat},${trackingData.userLng}&output=embed`}
+                  src={`https://maps.google.com/maps?saddr=$${trackingData.ambLat},${trackingData.ambLng}&daddr=${trackingData.userLat},${trackingData.userLng}&output=embed`}
                   className="w-full h-full"
                   allowFullScreen
                   loading="lazy"

@@ -16,14 +16,31 @@ export default function AmbulanceDashboard() {
   const CHARGE_PER_BOOKING = 29;
   const navigate = useNavigate();
 
-  // --- App States ---
   const [driverData, setDriverData] = useState(null); 
   
-  const [hasRequest, setHasRequest] = useState(false);
-  const [requestData, setRequestData] = useState(null); 
+  // 🚀 1. REFRESH FIX: State को localStorage से पढ़कर चालू करें
+  const [requestData, setRequestData] = useState(() => {
+    const saved = localStorage.getItem("driver_requestData");
+    return saved ? JSON.parse(saved) : null;
+  });
   
-  const [isAccepted, setIsAccepted] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0); 
+  const [hasRequest, setHasRequest] = useState(() => {
+    return localStorage.getItem("driver_hasRequest") === "true";
+  });
+  
+  const [isAccepted, setIsAccepted] = useState(() => {
+    return localStorage.getItem("driver_isAccepted") === "true";
+  });
+
+  const [currentStep, setCurrentStep] = useState(() => {
+    return parseInt(localStorage.getItem("driver_currentStep")) || 0;
+  });
+
+  // 🚀 2. HISTORY FIX: बुकिंग हिस्ट्री को भी localStorage से पढ़ें
+  const [bookingsHistory, setBookingsHistory] = useState(() => {
+    const saved = localStorage.getItem("driver_bookingsHistory");
+    return saved ? JSON.parse(saved) : [];
+  });
   
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'alert', onConfirm: () => {} });
@@ -33,7 +50,16 @@ export default function AmbulanceDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", email: "", mobile: "" });
 
-  const [bookingsHistory, setBookingsHistory] = useState([]);
+  // 🚀 3. SYNC ENGINE: जब भी डेटा बदले, उसे तुरंत localStorage में सेव कर दो
+  useEffect(() => {
+    if (requestData) localStorage.setItem("driver_requestData", JSON.stringify(requestData));
+    else localStorage.removeItem("driver_requestData");
+
+    localStorage.setItem("driver_hasRequest", hasRequest);
+    localStorage.setItem("driver_isAccepted", isAccepted);
+    localStorage.setItem("driver_currentStep", currentStep);
+    localStorage.setItem("driver_bookingsHistory", JSON.stringify(bookingsHistory));
+  }, [requestData, hasRequest, isAccepted, currentStep, bookingsHistory]);
 
   // --- 🔄 बैकएंड से प्रोफाइल लाना ---
   const fetchDriverProfile = async () => {
@@ -59,7 +85,7 @@ export default function AmbulanceDashboard() {
     fetchDriverProfile();
   }, []);
 
-  // ➔ 4. 🚨 SOCKET.IO LISTENER (एडमिन के 'incoming-duty' को सुनेगा)
+  // ➔ 🚨 SOCKET.IO LISTENER (एडमिन के 'incoming-duty' को सुनेगा)
   useEffect(() => {
     if (!driverData) return;
 
@@ -67,7 +93,7 @@ export default function AmbulanceDashboard() {
       // 🚨 TARGET LOCK: क्या ये राइड मेरी ID या मेरे नाम के लिए है?
       if (data.driverId === driverData._id || data.driverName === driverData.name) {
         setRequestData({
-          reqId: data.reqId, // 🚀 एडमिन से आई हुई रिक्वेस्ट ID सेव की
+          reqId: data.reqId, 
           name: data.patientName,
           phone: data.patientMobile,
           emergency: data.emergency || "Emergency Assigned by Admin", 
@@ -92,7 +118,7 @@ export default function AmbulanceDashboard() {
     return () => socket.off("incoming-duty", handleIncomingDuty);
   }, [driverData]); 
 
-  // 👇 🔥 5. MASTER TRICK: LocalStorage Fallback 👇
+  // 👇 🔥 MASTER TRICK: LocalStorage Fallback 👇
   useEffect(() => {
     const checkOfflineRide = () => {
       const savedRide = localStorage.getItem("newEmergencyRide");
@@ -101,7 +127,7 @@ export default function AmbulanceDashboard() {
         
         if (data.driverId === driverData._id || data.driverName === driverData.name) {
           setRequestData({
-            reqId: data.reqId, // 🚀 यहाँ भी ID सेव की
+            reqId: data.reqId, 
             name: data.patientName,
             phone: data.patientMobile,
             emergency: data.emergency || "Emergency Assigned by Admin", 
@@ -129,16 +155,14 @@ export default function AmbulanceDashboard() {
     return () => window.removeEventListener("storage", checkOfflineRide);
   }, [driverData]); 
 
-  // 🚀 6. LIVE GPS TRACKING (सीधा एडमिन और यूज़र को लोकेशन भेजना)
+  // 🚀 LIVE GPS TRACKING (सीधा एडमिन और यूज़र को लोकेशन भेजना)
   useEffect(() => {
     let watchId;
 
-    // अगर रिक्वेस्ट एक्सेप्ट हो चुकी है और अभी पूरी नहीं हुई है (Step 6 से कम)
     if (isAccepted && requestData && requestData.reqId && currentStep < 6) {
       if ("geolocation" in navigator) {
         watchId = navigator.geolocation.watchPosition(
           (position) => {
-            // हर बार लोकेशन बदलते ही एडमिन को बैकएंड के ज़रिए भेजो
             socket.emit("driver-location-update", {
               reqId: requestData.reqId,
               lat: position.coords.latitude,
@@ -157,12 +181,10 @@ export default function AmbulanceDashboard() {
       }
     }
 
-    // जब राइड ख़त्म हो जाए, तो GPS Tracking बंद कर दो
     return () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
   }, [isAccepted, requestData, currentStep]);
-
 
   const handleEditClick = () => {
     setEditForm({ name: driverData.name, email: driverData.email, mobile: driverData.mobile });
@@ -186,6 +208,8 @@ export default function AmbulanceDashboard() {
   };
 
   const handleLogout = () => {
+    // ➔ ध्यान दें: हम सिर्फ ड्राइवर का लॉगिन टोकन उड़ा रहे हैं, 
+    // bookingsHistory नहीं उड़ा रहे हैं। इसलिए लॉगआउट के बाद भी हिस्ट्री सेफ रहेगी!
     localStorage.removeItem("driverToken");
     navigate("/DriverLogin");
   };
@@ -221,13 +245,12 @@ export default function AmbulanceDashboard() {
     );
   };
 
-  // ➔ 🚀 गूगल मैप्स नेविगेशन (यहाँ $$ को $ कर दिया गया है)
+  // ➔ 🚀 गूगल मैप्स नेविगेशन
   const handleLocationClick = () => {
     if(requestData && requestData.coords && requestData.coords[0] !== null) {
-      // यहाँ $${} को हटाकर ${} कर दिया गया है 
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${requestData.coords[0]},${requestData.coords[1]}`, '_blank');
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=$${requestData.coords[0]},${requestData.coords[1]}`, '_blank');
     } else if (requestData && requestData.location) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(requestData.location)}`, '_blank');
+      window.open(`https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(requestData.location)}`, '_blank');
     } else {
       triggerModal("⚠️ Location Error", "मरीज़ की लोकेशन उपलब्ध नहीं है!", "alert"); 
     }
@@ -240,14 +263,12 @@ export default function AmbulanceDashboard() {
         const nextStep = stepNumber + 1;
         setCurrentStep(nextStep);
         
-        // लाइव ट्रैकिंग सिग्नल भेजो
         if (requestData && requestData.reqId) {
           socket.emit("update-journey-status", { reqId: requestData.reqId, step: nextStep });
         }
         
       } else if (stepNumber === 6) {
         
-        // ट्रिप पूरी होने का सिग्नल (Step 7)
         if (requestData && requestData.reqId) {
           socket.emit("update-journey-status", { reqId: requestData.reqId, step: 7 });
         }
@@ -260,7 +281,7 @@ export default function AmbulanceDashboard() {
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         
-        setBookingsHistory(prev => [...prev, newTrip]);
+        setBookingsHistory(prev => [...prev, newTrip]); // हिस्ट्री में सेव 
         setHasRequest(false);
         setIsAccepted(false);
         setCurrentStep(0);
@@ -578,22 +599,26 @@ export default function AmbulanceDashboard() {
           <div className="border-t border-gray-100 pt-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Booking History Details</h3>
             <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-              {bookingsHistory.slice().reverse().map((booking) => (
-                <div key={booking.id} className="bg-gray-50 border border-gray-200 p-3 rounded-xl flex justify-between items-center shadow-sm hover:border-gray-300 transition-colors">
-                  <div className="flex-1 pr-3 truncate">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-bold text-gray-800">{booking.name}</span>
-                      <span className="text-[10px] text-gray-400 bg-gray-200/60 px-1.5 py-0.5 rounded">{booking.time}</span>
+              {bookingsHistory.length === 0 ? (
+                 <p className="text-xs text-gray-400 text-center py-4">No trips completed yet.</p>
+              ) : (
+                bookingsHistory.slice().reverse().map((booking) => (
+                  <div key={booking.id} className="bg-gray-50 border border-gray-200 p-3 rounded-xl flex justify-between items-center shadow-sm hover:border-gray-300 transition-colors">
+                    <div className="flex-1 pr-3 truncate">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-bold text-gray-800">{booking.name}</span>
+                        <span className="text-[10px] text-gray-400 bg-gray-200/60 px-1.5 py-0.5 rounded">{booking.time}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">{booking.location}</p>
                     </div>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">{booking.location}</p>
+                    <div className="text-right shrink-0">
+                      <span className="text-sm font-extrabold text-green-600 bg-green-50 px-2.5 py-1 rounded-lg border border-green-100">
+                        +₹{booking.charge}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-sm font-extrabold text-green-600 bg-green-50 px-2.5 py-1 rounded-lg border border-green-100">
-                      +₹{booking.charge}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </section>

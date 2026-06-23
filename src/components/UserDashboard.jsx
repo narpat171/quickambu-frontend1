@@ -26,17 +26,32 @@ function UserDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'alert', onConfirm: () => {} });
 
-  const [myReqId, setMyReqId] = useState(null); 
-  const [journeyStep, setJourneyStep] = useState(0); 
+  // 🚀 1. REFRESH FIX: State को localStorage से पढ़कर चालू करें ताकि डेटा न उड़े
+  const [myReqId, setMyReqId] = useState(() => localStorage.getItem("myReqId") || null); 
+  const [journeyStep, setJourneyStep] = useState(() => parseInt(localStorage.getItem("journeyStep")) || 0); 
+  const [assignedDriver, setAssignedDriver] = useState(() => {
+    const saved = localStorage.getItem("assignedDriver");
+    return saved ? JSON.parse(saved) : null;
+  });
   
   const navigate = useNavigate();
+
+  // 🚀 2. REFRESH FIX: जब भी ये बदलें, इन्हें localStorage में सेव कर दो
+  useEffect(() => {
+    if (myReqId) localStorage.setItem("myReqId", myReqId);
+    else localStorage.removeItem("myReqId");
+
+    localStorage.setItem("journeyStep", journeyStep);
+
+    if (assignedDriver) localStorage.setItem("assignedDriver", JSON.stringify(assignedDriver));
+    else localStorage.removeItem("assignedDriver");
+  }, [myReqId, journeyStep, assignedDriver]);
 
   const triggerModal = (title, message, type = "alert", onConfirmAction = () => {}) => {
     setModalConfig({ title, message, type, onConfirm: onConfirmAction });
     setShowModal(true);
   };
 
-  // 🚀 स्मार्ट फॉलबैक के साथ प्रोफाइल लाना
   const fetchUserProfile = async () => {
     const token = localStorage.getItem("userToken");
     if (!token) { navigate("/UserLogin"); return; }
@@ -52,7 +67,6 @@ function UserDashboard() {
       }
     } catch (error) { 
       console.error("Backend Error: ", error); 
-      // 🚀 बैकएंड बंद होने पर टेस्टिंग डेटा दिखाएगा (लोडिंग पर नहीं अटकेगा)
       setUserData({
         name: "Narpat Rathore",
         mobile: "9876543210",
@@ -64,7 +78,6 @@ function UserDashboard() {
     }
   };
 
-  // 🚀 REVERSE GEOCODING (GPS को असली पते में बदलना)
   const fetchLiveLocation = () => {
     setLocationStatus("Fetching Exact Location...");
     setExactAddress("Detecting via Satellite...");
@@ -106,15 +119,28 @@ function UserDashboard() {
 
   useEffect(() => { fetchUserProfile(); fetchLiveLocation(); }, []);
 
+  // 🚀 3. SOCKET LISTENERS (ड्राइवर की डिटेल्स रिसीव करने के लिए)
   useEffect(() => {
     socket.on("journey-status-updated", (data) => {
-      if (data.reqId === myReqId) {
+      // अगर यह हमारी ही रिक्वेस्ट है
+      if (data.reqId === myReqId || data.reqId === localStorage.getItem("myReqId")) {
         setJourneyStep(data.step);
+        
+        // 👉 अगर बैकएंड ने ड्राइवर का नाम और नंबर भेजा है, तो उसे सेव कर लो!
+        if (data.driverName && data.driverMobile) {
+          setAssignedDriver({ name: data.driverName, mobile: data.driverMobile });
+        }
+
+        // ट्रिप ख़त्म होने पर सब क्लियर कर दो
         if (data.step === 7) {
           triggerModal("🎉 Trip Completed", "आप सुरक्षित रूप से पहुँच गए हैं! QuickAmbu का उपयोग करने के लिए धन्यवाद।", "alert");
           setTimeout(() => {
             setMyReqId(null);
             setJourneyStep(0);
+            setAssignedDriver(null);
+            localStorage.removeItem("myReqId");
+            localStorage.removeItem("journeyStep");
+            localStorage.removeItem("assignedDriver");
           }, 5000);
         }
       }
@@ -154,6 +180,7 @@ function UserDashboard() {
     const newReqId = "REQ-" + Date.now();
     setMyReqId(newReqId); 
     setJourneyStep(0); 
+    setAssignedDriver(null); // नई रिक्वेस्ट पर पुराना ड्राइवर हटा दो
 
     const emergencyDetails = {
       id: newReqId, 
@@ -175,7 +202,7 @@ function UserDashboard() {
     }, 2000);
   };
 
-  if (!userData) return <div className="min-h-screen flex items-center justify-center font-bold text-gray-500">Loading QuickAmbu...</div>;
+  if (!userData) return <div className="min-h-screen flex items-center justify-center font-bold text-gray-500"><Loader2 className="w-8 h-8 animate-spin text-red-500 mr-2"/> Loading QuickAmbu...</div>;
   const profileImageSrc = userData.profilePhoto ? `https://quickambu-backend-1.onrender.com/${userData.profilePhoto}` : "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
   const journeyLabels = ["Waiting for Driver to Accept", "Ambulance Started", "On The Way", "Reached Patient", "Patient On Board", "Reached Hospital", "Trip Completed!"];
@@ -289,6 +316,25 @@ function UserDashboard() {
               <h2 className="text-lg font-extrabold text-emerald-700 mb-5 flex items-center gap-2">
                 <Navigation className="w-5 h-5"/> Live Ambulance Status
               </h2>
+              
+              {/* 🚀 4. DRIVER CONTACT CARD (अगर ड्राइवर असाइन हो गया है) */}
+              {assignedDriver && (
+                <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm animate-in fade-in zoom-in duration-300">
+                  <div>
+                    <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Ambulance Assigned</p>
+                    <p className="text-lg font-black text-gray-900 leading-none">{assignedDriver.name || "Ambulance Driver"}</p>
+                  </div>
+                  
+                  {/* यह <a href="tel:..."> वाला बटन है जिसपर क्लिक करते ही सीधे कॉल लगेगी */}
+                  <a 
+                    href={`tel:${assignedDriver.mobile}`} 
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Phone className="w-4 h-4 fill-current" /> Call Driver
+                  </a>
+                </div>
+              )}
+
               <div className="space-y-4">
                 {journeyLabels.map((label, idx) => {
                    const isActive = journeyStep >= idx;
@@ -306,7 +352,7 @@ function UserDashboard() {
 
         {/* COLUMN 2: EMERGENCY FORM */}
         <div className="bg-white rounded-3xl p-6 shadow-xl border border-red-100 relative overflow-hidden h-fit">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-500 to-red-700"></div>
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-linear-to-r from-red-500 to-red-700"></div>
           <h2 className="text-lg font-extrabold text-gray-900 mb-5 flex items-center gap-2"><HeartPulse className="w-5 h-5 text-red-500" /> Emergency Details</h2>
           
           <div className="mb-4">
