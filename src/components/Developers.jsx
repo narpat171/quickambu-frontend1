@@ -11,7 +11,7 @@ import CFOImg from '../assets/CFO.jpeg';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
-function Developers() {
+export default function Developers() {
   // 👇 2. पॉप-अप में किसका डेटा दिखाना है, उसके लिए State
   const [selectedMember, setSelectedMember] = useState(null);
 
@@ -164,7 +164,7 @@ function Developers() {
                 <div className="flex items-center gap-3 text-slate-700 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                   <User className="text-gray-400" size={20} />
                   <div>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">S/O (Father's Name)</p>
+                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">S/O (Father&apos;s Name)</p>
                     <p className="font-semibold text-slate-800">{selectedMember.fatherName}</p>
                   </div>
                 </div>
@@ -204,5 +204,3 @@ function Developers() {
     </div>
   );
 }
-
-export default Developers;
