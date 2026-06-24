@@ -74,7 +74,6 @@ export default function AdminDashboard() {
       navigate("/AdminLogin");
     }
 
-    // 🧹 BUG FIX: ब्राउज़र की मेमोरी से पुरानी फंसी हुई एम्बुलेंस की लिस्ट को डिलीट कर दो
     localStorage.removeItem("quickambu_dispatched_ambs");
 
     const rajasthanCoords = [
@@ -94,9 +93,8 @@ export default function AdminDashboard() {
             driver: d.name, 
             phone: d.mobile,
             type: "ALS (ICU)",
-            status: "Available",
-            distance: "Click 'Search Nearest' to Calculate",
             kmValue: 99999,
+            distance: "Click 'Search Nearest' to Calculate",
             coords: rajasthanCoords[index % rajasthanCoords.length], 
             images: [
               "https://th.bing.com/th/id/OIP.q4ZWBwsbzhHjYzDyiaV_twHaE8?w=161&h=150&c=6&r=0&o=7&dpr=1.5&pid=1.7&rm=3",
@@ -113,6 +111,32 @@ export default function AdminDashboard() {
     fetchAllDrivers();
   }, [navigate]);
 
+  // 🚀 1. MISSED REQUEST CATCHER (अगर एडमिन ऑफलाइन था तब आई रिक्वेस्ट)
+  useEffect(() => {
+    const checkMissedRequests = () => {
+      const missedReq = localStorage.getItem("global_pending_request");
+      if (missedReq && !currentLiveUser) {
+        const parsedReq = JSON.parse(missedReq);
+        setCurrentLiveUser({
+          id: parsedReq.id,
+          name: parsedReq.name,
+          phone: parsedReq.mobile,
+          location: parsedReq.location || "Location Coordinates Synced",
+          emergencyType: parsedReq.emergency,
+          time: parsedReq.time,
+          coords: parsedReq.coords 
+        });
+      }
+    };
+
+    // पेज लोड होते ही चेक करो
+    checkMissedRequests();
+
+    // अगर एक टैब में यूज़र है और दूसरे में एडमिन, तो तुरंत कैच करो
+    window.addEventListener("storage", checkMissedRequests);
+    return () => window.removeEventListener("storage", checkMissedRequests);
+  }, []);
+
   // 🚀 SOCKET LISTENERS
   useEffect(() => {
     socket.on("receive-request", (newReq) => {
@@ -125,6 +149,8 @@ export default function AdminDashboard() {
         time: newReq.time,
         coords: newReq.coords 
       });
+      // सॉकेट से रिक्वेस्ट आते ही मेमोरी में डाल लो
+      localStorage.setItem("global_pending_request", JSON.stringify(newReq));
     });
 
     socket.on("journey-status-updated", (data) => {
@@ -336,7 +362,9 @@ export default function AdminDashboard() {
 
     setSentRequests([newDispatch, ...sentRequests]);
     setIncomingRequestsHistory(prev => prev.map(req => req.id === generatedReqId || req.id === currentLiveUser?.id ? { ...req, status: "Dispatched" } : req));
-    setAmbulances(prev => prev.map(a => a.id === ambId ? { ...a, status: "Busy" } : a));
+
+    // 🚀 काम पूरा होने के बाद ग्लोबल पेंडिंग रिक्वेस्ट मिटा दो
+    localStorage.removeItem("global_pending_request");
 
     setCustomNotification({ show: true, title: "Request Sent!", message: `Ambulance ${amb.driver} dispatched for ${patientName}.`, type: "success" });
     setOpenFormId(null);
@@ -347,6 +375,12 @@ export default function AdminDashboard() {
     if (!phone) return "";
     return phone.replace(/[^0-9+]/g, ''); 
   };
+
+  // 🚀 DISMISS करने पर भी रिक्वेस्ट को क्लियर करना है
+  const dismissRequest = () => {
+    localStorage.removeItem("global_pending_request");
+    setCurrentLiveUser(null);
+  }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 text-gray-900 font-sans antialiased relative animate-page-fade">
@@ -482,7 +516,7 @@ export default function AdminDashboard() {
             <a href={currentLiveUser ? `tel:${formatPhoneNumber(currentLiveUser.phone)}` : "#"} onClick={stopAlertTone} className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black text-xs md:text-sm py-3 rounded-xl shadow-md tracking-wider transition duration-200 transform active:scale-95 text-center cursor-pointer">
               <IoCall className="text-lg" /> CALL USER NOW {currentLiveUser ? `(${currentLiveUser.name})` : ""}
             </a>
-            <button disabled={!currentLiveUser} onClick={() => setCurrentLiveUser(null)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs px-5 py-3 rounded-xl transition duration-200 transform active:scale-95 cursor-pointer">
+            <button disabled={!currentLiveUser} onClick={dismissRequest} className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs px-5 py-3 rounded-xl transition duration-200 transform active:scale-95 cursor-pointer">
               Dismiss Request
             </button>
           </div>
@@ -522,7 +556,6 @@ export default function AdminDashboard() {
               {displayedAmbulances.map((amb) => {
                 const imgIndex = imgIndexes[amb.id] || 0;
                 
-                // 🚀 SMART BUG FIX: सीधे Bookings Log से पता करो कि क्या यह एम्बुलेंस बिजी है?
                 const isDispatched = sentRequests.some(req => req.ambId === amb.id && !req.status.includes("Completed"));
 
                 return (
@@ -542,9 +575,11 @@ export default function AdminDashboard() {
                             <span className="text-[9px] md:text-[10px] font-black uppercase bg-gray-100 px-2 py-0.5 rounded-sm text-gray-600 break-all">{amb.type}</span>
                             <h3 className="text-sm md:text-base font-bold text-gray-950 mt-1">{amb.driver}</h3>
                           </div>
-                          <span className={`text-[10px] md:text-xs font-bold px-2 py-0.5 md:py-1 rounded-full whitespace-nowrap transition-all duration-300 ${isDispatched ? "bg-blue-50 text-blue-700 animate-pulse" : amb.status === "Available" ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
-                            ● {isDispatched ? "Dispatched" : amb.status}
+                          
+                          <span className={`text-[10px] md:text-xs font-bold px-2 py-0.5 md:py-1 rounded-full whitespace-nowrap transition-all duration-300 ${isDispatched ? "bg-blue-50 text-blue-700 animate-pulse" : "bg-green-50 text-green-700"}`}>
+                            ● {isDispatched ? "Dispatched" : "Available"}
                           </span>
+
                         </div>
                         <div className="mt-3 space-y-1.5 text-xs text-gray-600">
                           <p className="flex items-center gap-1.5"><MdPhone className="text-gray-400 shrink-0" /> <strong>Phone:</strong> {amb.phone}</p>
@@ -554,7 +589,7 @@ export default function AdminDashboard() {
 
                       <div className="pt-1">
                         {isDispatched ? (
-                          <a href={`tel:${formatPhoneNumber(amb.phone)}`} className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all transform active:scale-95 duration-150 text-center animate-scale-up cursor-pointer">
+                          <a href={`tel:${formatPhoneNumber(amb.phone)}`} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all transform active:scale-95 duration-150 text-center animate-scale-up cursor-pointer">
                             <IoCall /> CALL DRIVER
                           </a>
                         ) : (
