@@ -43,11 +43,6 @@ export default function AdminDashboard() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [dispatchedAmbulanceIds, setDispatchedAmbulanceIds] = useState(() => {
-    const saved = localStorage.getItem("quickambu_dispatched_ambs");
-    return saved ? JSON.parse(saved) : [];
-  });
-
   useEffect(() => {
     localStorage.setItem("quickambu_sent_requests", JSON.stringify(sentRequests));
   }, [sentRequests]);
@@ -55,10 +50,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     localStorage.setItem("quickambu_incoming_history", JSON.stringify(incomingRequestsHistory));
   }, [incomingRequestsHistory]);
-
-  useEffect(() => {
-    localStorage.setItem("quickambu_dispatched_ambs", JSON.stringify(dispatchedAmbulanceIds));
-  }, [dispatchedAmbulanceIds]);
 
   const [customNotification, setCustomNotification] = useState({ show: false, title: "", message: "", type: "success" });
   const [openFormId, setOpenFormId] = useState(null);
@@ -82,6 +73,9 @@ export default function AdminDashboard() {
     if (isAuth !== "true") {
       navigate("/AdminLogin");
     }
+
+    // 🧹 BUG FIX: ब्राउज़र की मेमोरी से पुरानी फंसी हुई एम्बुलेंस की लिस्ट को डिलीट कर दो
+    localStorage.removeItem("quickambu_dispatched_ambs");
 
     const rajasthanCoords = [
       [28.2900, 74.9700], 
@@ -138,10 +132,7 @@ export default function AdminDashboard() {
       
       setSentRequests(prev => {
         const targetReq = prev.find(req => req.id === data.reqId);
-        
-        // ➔ BUG FIX: एम्बुलेंस को वापस फ्री (Available) करो
         if (data.step === 7 && targetReq) {
-          setDispatchedAmbulanceIds(currentIds => currentIds.filter(id => id !== targetReq.ambId));
           setAmbulances(currentAmbs => currentAmbs.map(amb => amb.id === targetReq.ambId ? { ...amb, status: "Available" } : amb));
         }
         return prev.map(req => req.id === data.reqId ? { ...req, status: statusLabel } : req);
@@ -344,11 +335,8 @@ export default function AdminDashboard() {
     };
 
     setSentRequests([newDispatch, ...sentRequests]);
-    
     setIncomingRequestsHistory(prev => prev.map(req => req.id === generatedReqId || req.id === currentLiveUser?.id ? { ...req, status: "Dispatched" } : req));
-    
     setAmbulances(prev => prev.map(a => a.id === ambId ? { ...a, status: "Busy" } : a));
-    setDispatchedAmbulanceIds(prev => [...prev, ambId]);
 
     setCustomNotification({ show: true, title: "Request Sent!", message: `Ambulance ${amb.driver} dispatched for ${patientName}.`, type: "success" });
     setOpenFormId(null);
@@ -533,7 +521,9 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-start">
               {displayedAmbulances.map((amb) => {
                 const imgIndex = imgIndexes[amb.id] || 0;
-                const isDispatched = dispatchedAmbulanceIds.includes(amb.id);
+                
+                // 🚀 SMART BUG FIX: सीधे Bookings Log से पता करो कि क्या यह एम्बुलेंस बिजी है?
+                const isDispatched = sentRequests.some(req => req.ambId === amb.id && !req.status.includes("Completed"));
 
                 return (
                   <div key={amb.id} className={`bg-white rounded-2xl border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg relative ${isLocationFiltered ? "border-green-300 ring-2 ring-green-50/50" : "border-gray-200"}`}>
@@ -591,7 +581,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* ➔ TAB 2: BOOKINGS LOG (अपडेटेड) */}
+        {/* TAB 2: BOOKINGS LOG */}
         {activeTab === "ambLogs" && (
           <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-6 space-y-4 transition-all duration-300 animate-fade-in shadow-sm">
             <div className="border-b pb-2"><h3 className="text-base md:text-lg font-black text-gray-950">Ambulance Bookings Log</h3></div>
@@ -609,7 +599,6 @@ export default function AdminDashboard() {
                       <th className="p-2.5">Driver</th>
                       <th className="p-2.5">Patient Details</th>
                       <th className="p-2.5">Time</th>
-                      {/* ➔ Live Status कॉलम यहाँ से हटा दिया गया है */}
                       <th className="p-2.5">Track Map</th>
                     </tr>
                   </thead>
@@ -621,7 +610,6 @@ export default function AdminDashboard() {
                         <td className="p-2.5 font-medium">{req.patientName} ({req.patientPhone})</td>
                         <td className="p-2.5 text-gray-500">{req.time}</td>
                         <td className="p-2.5">
-                          {/* ➔ BUG FIX: ट्रिप पूरी होते ही बटन हट जाएगा और 'Completed Trip' आ जाएगा */}
                           {req.status.includes("Completed") ? (
                             <span className="text-[10px] md:text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1 w-max">
                               <IoCheckmark className="text-sm" /> Completed Trip
