@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+\import React, { useState, useEffect, useRef } from "react";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { IoWarning, IoCheckmark, IoClose, IoLocate, IoCloseCircle, IoCall, IoVolumeMute } from "react-icons/io5";
 import { FaLocationDot } from "react-icons/fa6";
@@ -43,6 +43,11 @@ export default function AdminDashboard() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [dispatchedAmbulanceIds, setDispatchedAmbulanceIds] = useState(() => {
+    const saved = localStorage.getItem("quickambu_dispatched_ambs");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     localStorage.setItem("quickambu_sent_requests", JSON.stringify(sentRequests));
   }, [sentRequests]);
@@ -50,6 +55,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     localStorage.setItem("quickambu_incoming_history", JSON.stringify(incomingRequestsHistory));
   }, [incomingRequestsHistory]);
+
+  useEffect(() => {
+    localStorage.setItem("quickambu_dispatched_ambs", JSON.stringify(dispatchedAmbulanceIds));
+  }, [dispatchedAmbulanceIds]);
 
   const [customNotification, setCustomNotification] = useState({ show: false, title: "", message: "", type: "success" });
   const [openFormId, setOpenFormId] = useState(null);
@@ -74,6 +83,7 @@ export default function AdminDashboard() {
       navigate("/AdminLogin");
     }
 
+    // 🧹 BUG FIX: पुरानी फँसी हुई एम्बुलेंस लिस्ट साफ़
     localStorage.removeItem("quickambu_dispatched_ambs");
 
     const rajasthanCoords = [
@@ -93,6 +103,7 @@ export default function AdminDashboard() {
             driver: d.name, 
             phone: d.mobile,
             type: "ALS (ICU)",
+            status: "Available",
             kmValue: 99999,
             distance: "Click 'Search Nearest' to Calculate",
             coords: rajasthanCoords[index % rajasthanCoords.length], 
@@ -129,10 +140,7 @@ export default function AdminDashboard() {
       }
     };
 
-    // पेज लोड होते ही चेक करो
     checkMissedRequests();
-
-    // अगर एक टैब में यूज़र है और दूसरे में एडमिन, तो तुरंत कैच करो
     window.addEventListener("storage", checkMissedRequests);
     return () => window.removeEventListener("storage", checkMissedRequests);
   }, []);
@@ -158,7 +166,10 @@ export default function AdminDashboard() {
       
       setSentRequests(prev => {
         const targetReq = prev.find(req => req.id === data.reqId);
+        
+        // ➔ BUG FIX: एम्बुलेंस को वापस फ्री (Available) करो
         if (data.step === 7 && targetReq) {
+          setDispatchedAmbulanceIds(currentIds => currentIds.filter(id => id !== targetReq.ambId));
           setAmbulances(currentAmbs => currentAmbs.map(amb => amb.id === targetReq.ambId ? { ...amb, status: "Available" } : amb));
         }
         return prev.map(req => req.id === data.reqId ? { ...req, status: statusLabel } : req);
@@ -174,7 +185,7 @@ export default function AdminDashboard() {
           return { ...req, ambLat: data.lat, ambLng: data.lng, distanceKm: `${newLiveDistance} km` }; 
         }
         return req;
-      }));
+      });
 
       setTrackingData(prev => {
         if (prev && prev.id === data.reqId) {
@@ -275,6 +286,13 @@ export default function AdminDashboard() {
     }
   };
 
+  // 🚀 DISMISS BUTTON LOGIC
+  const dismissRequest = () => {
+    localStorage.removeItem("global_pending_request");
+    setCurrentLiveUser(null);
+    stopAlertTone();
+  };
+
   const handleLocationSearchFilter = () => {
     if (!currentLiveUser || !currentLiveUser.coords) {
       setCustomNotification({ show: true, title: "Location Error", message: "मरीज़ की लोकेशन नहीं मिल पा रही है!", type: "error" });
@@ -342,6 +360,9 @@ export default function AdminDashboard() {
 
     socket.emit("dispatch-ambulance", dispatchData);
     
+    // 🚀 GLOBAL BRIDGE: एडमिन से ड्राइवर तक रिक्वेस्ट भेजने का जुगाड़
+    localStorage.setItem("newEmergencyRide", JSON.stringify(dispatchData));
+    
     const newDispatch = {
       id: generatedReqId,
       ambId: ambId,
@@ -362,6 +383,9 @@ export default function AdminDashboard() {
 
     setSentRequests([newDispatch, ...sentRequests]);
     setIncomingRequestsHistory(prev => prev.map(req => req.id === generatedReqId || req.id === currentLiveUser?.id ? { ...req, status: "Dispatched" } : req));
+    
+    setAmbulances(prev => prev.map(a => a.id === ambId ? { ...a, status: "Busy" } : a));
+    setDispatchedAmbulanceIds(prev => [...prev, ambId]);
 
     // 🚀 काम पूरा होने के बाद ग्लोबल पेंडिंग रिक्वेस्ट मिटा दो
     localStorage.removeItem("global_pending_request");
@@ -375,12 +399,6 @@ export default function AdminDashboard() {
     if (!phone) return "";
     return phone.replace(/[^0-9+]/g, ''); 
   };
-
-  // 🚀 DISMISS करने पर भी रिक्वेस्ट को क्लियर करना है
-  const dismissRequest = () => {
-    localStorage.removeItem("global_pending_request");
-    setCurrentLiveUser(null);
-  }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 text-gray-900 font-sans antialiased relative animate-page-fade">
@@ -416,7 +434,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* Modals... */}
+      {/* Modals */}
       {deleteTargetId && (
         <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-sm w-full p-6 space-y-4 transform transition-all duration-300 animate-scale-up">
@@ -516,6 +534,7 @@ export default function AdminDashboard() {
             <a href={currentLiveUser ? `tel:${formatPhoneNumber(currentLiveUser.phone)}` : "#"} onClick={stopAlertTone} className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-black text-xs md:text-sm py-3 rounded-xl shadow-md tracking-wider transition duration-200 transform active:scale-95 text-center cursor-pointer">
               <IoCall className="text-lg" /> CALL USER NOW {currentLiveUser ? `(${currentLiveUser.name})` : ""}
             </a>
+            {/* ➔ 🚀 DISMISS BUTTON BUG FIX: अब Dismiss करने पर मेमोरी से भी उड़ेगी */}
             <button disabled={!currentLiveUser} onClick={dismissRequest} className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs px-5 py-3 rounded-xl transition duration-200 transform active:scale-95 cursor-pointer">
               Dismiss Request
             </button>
@@ -556,6 +575,7 @@ export default function AdminDashboard() {
               {displayedAmbulances.map((amb) => {
                 const imgIndex = imgIndexes[amb.id] || 0;
                 
+                // 🚀 SMART BUG FIX
                 const isDispatched = sentRequests.some(req => req.ambId === amb.id && !req.status.includes("Completed"));
 
                 return (
@@ -634,6 +654,7 @@ export default function AdminDashboard() {
                       <th className="p-2.5">Driver</th>
                       <th className="p-2.5">Patient Details</th>
                       <th className="p-2.5">Time</th>
+                      {/* ➔ 🚀 Live Status हटा दिया गया है */}
                       <th className="p-2.5">Track Map</th>
                     </tr>
                   </thead>
@@ -645,6 +666,7 @@ export default function AdminDashboard() {
                         <td className="p-2.5 font-medium">{req.patientName} ({req.patientPhone})</td>
                         <td className="p-2.5 text-gray-500">{req.time}</td>
                         <td className="p-2.5">
+                          {/* ➔ 🚀 BUG FIX: ट्रिप पूरी होते ही बटन हट जाएगा और 'Completed Trip' आ जाएगा */}
                           {req.status.includes("Completed") ? (
                             <span className="text-[10px] md:text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1 w-max">
                               <IoCheckmark className="text-sm" /> Completed Trip
@@ -684,6 +706,7 @@ export default function AdminDashboard() {
                       </div>
                       <p className="text-xs md:text-sm font-medium text-gray-800 break-all">{req.name} ({req.phone}) <br />{req.location}</p>
                     </div>
+                    {/* ➔ 🚀 BUG FIX: ट्रिप पूरी होने पर हरा बैज */}
                     <span className={`${req.status.includes("Completed") ? "bg-emerald-500" : "bg-amber-500"} text-white font-bold text-[10px] md:text-xs px-2.5 py-1 rounded-md shrink-0`}>
                       {req.status}
                     </span>
@@ -694,7 +717,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 🗺️ TRACKING MODAL */}
+        {/* 🗺️ TRACKING MODAL (Google Maps Fix) */}
         {trackingData && (
           <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all duration-300 animate-fade-in">
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-slate-800 max-w-lg w-full p-6 space-y-4 transform transition-all duration-300 animate-scale-up relative">
@@ -718,6 +741,7 @@ export default function AdminDashboard() {
               </div>
               
               <div className="w-full h-80 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200 relative shadow-inner">
+                {/* ➔ 🚀 MAP URL FIX */}
                 <iframe
                   title="Live Route"
                   src={`https://maps.google.com/maps?saddr=${trackingData.ambLat},${trackingData.ambLng}&daddr=${trackingData.userLat},${trackingData.userLng}&output=embed`}
