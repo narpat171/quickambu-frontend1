@@ -15,16 +15,16 @@ const socket = io("https://quickambu-backend-1.onrender.com");
 
 const initialAmbulances = [];
 
-// 🌍 HAVERSINE FORMULA (दो GPS कोऑर्डिनेट्स के बीच की असली दूरी नापने के लिए)
+// 🌍 HAVERSINE FORMULA
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // धरती का रेडियस (Kilometers में)
+  const R = 6371; 
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a = 
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // दूरी किलोमीटर में मिलेगी
+  return R * c; 
 };
 
 export default function AdminDashboard() {
@@ -84,11 +84,11 @@ export default function AdminDashboard() {
     }
 
     const rajasthanCoords = [
-      [28.2900, 74.9700], // चुरू शहर
-      [28.6700, 75.0300], // तारानगर 
-      [26.9124, 75.7873], // जयपुर 
-      [28.0200, 73.3100], // बीकानेर
-      [27.6000, 75.1500]  // सीकर
+      [28.2900, 74.9700], 
+      [28.6700, 75.0300], 
+      [26.9124, 75.7873], 
+      [28.0200, 73.3100], 
+      [27.6000, 75.1500]  
     ];
 
     const fetchAllDrivers = async () => {
@@ -135,8 +135,18 @@ export default function AdminDashboard() {
 
     socket.on("journey-status-updated", (data) => {
       const statusLabel = getJourneyLabel(data.step);
-      // ➔ FIX 3: Status को Sent Requests और User History दोनों में अपडेट करें (ताकि Completed दिखे)
-      setSentRequests(prev => prev.map(req => req.id === data.reqId ? { ...req, status: statusLabel } : req));
+      
+      setSentRequests(prev => {
+        const targetReq = prev.find(req => req.id === data.reqId);
+        
+        // ➔ BUG FIX: एम्बुलेंस को वापस फ्री (Available) करो
+        if (data.step === 7 && targetReq) {
+          setDispatchedAmbulanceIds(currentIds => currentIds.filter(id => id !== targetReq.ambId));
+          setAmbulances(currentAmbs => currentAmbs.map(amb => amb.id === targetReq.ambId ? { ...amb, status: "Available" } : amb));
+        }
+        return prev.map(req => req.id === data.reqId ? { ...req, status: statusLabel } : req);
+      });
+
       setIncomingRequestsHistory(prev => prev.map(req => req.id === data.reqId ? { ...req, status: statusLabel } : req));
     });
 
@@ -165,7 +175,6 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // ➔ FIX 3: Labels को अपडेट कर दिया गया है ताकि 7वें स्टेप पर 'Completed' आ जाए
   const getJourneyLabel = (step) => {
     const labels = ["Dispatched", "Ambulance Started", "On The Way", "Reached Patient", "Patient On Board", "Reached Hospital", "Completed!", "Completed!"];
     return labels[step] || "Completed!";
@@ -209,7 +218,6 @@ export default function AdminDashboard() {
       }
     } else {
       stopAlertTone();
-      // ➔ FIX 2: यहाँ से `setIsLocationFiltered(false)` हटा दिया ताकि एम्बुलेंस गायब न हों!
     }
     return () => stopAlertTone();
   }, [currentLiveUser]);
@@ -337,7 +345,6 @@ export default function AdminDashboard() {
 
     setSentRequests([newDispatch, ...sentRequests]);
     
-    // ➔ FIX 3: जैसे ही डिस्पैच हो, User History में भी 'Dispatched' कर दो!
     setIncomingRequestsHistory(prev => prev.map(req => req.id === generatedReqId || req.id === currentLiveUser?.id ? { ...req, status: "Dispatched" } : req));
     
     setAmbulances(prev => prev.map(a => a.id === ambId ? { ...a, status: "Busy" } : a));
@@ -434,7 +441,6 @@ export default function AdminDashboard() {
               </h3>
             </div>
             
-            {/* ➔ FIX 1: STOP SIREN BUTTON (सिर्फ तभी दिखेगा जब सायरन बज रहा हो / यूजर लाइव हो) */}
             <div className="flex items-center gap-3">
               {currentLiveUser && (
                 <button onClick={stopAlertTone} className="bg-red-100 hover:bg-red-200 text-red-700 font-bold px-3 py-1.5 rounded-lg text-xs md:text-sm animate-pulse flex items-center gap-1.5 transition-all cursor-pointer border border-red-300">
@@ -516,7 +522,6 @@ export default function AdminDashboard() {
         {/* TAB 1: LIVE CONTROL */}
         {activeTab === "live" && (
           <div className="space-y-4 transition-all duration-300 animate-fade-in">
-            {/* ➔ FIX 2: यहाँ से "No Ambulances Loaded" वाला डिब्बा पूरी तरह हटा दिया है */}
             <div className="flex justify-between items-center">
               <h2 className="text-sm md:text-base font-extrabold text-gray-950 flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-green-500 animate-ping"></span>
@@ -586,7 +591,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB 2: BOOKINGS LOG */}
+        {/* ➔ TAB 2: BOOKINGS LOG (अपडेटेड) */}
         {activeTab === "ambLogs" && (
           <div className="bg-white rounded-2xl border border-gray-200 p-4 md:p-6 space-y-4 transition-all duration-300 animate-fade-in shadow-sm">
             <div className="border-b pb-2"><h3 className="text-base md:text-lg font-black text-gray-950">Ambulance Bookings Log</h3></div>
@@ -604,7 +609,7 @@ export default function AdminDashboard() {
                       <th className="p-2.5">Driver</th>
                       <th className="p-2.5">Patient Details</th>
                       <th className="p-2.5">Time</th>
-                      <th className="p-2.5">Live Status</th>
+                      {/* ➔ Live Status कॉलम यहाँ से हटा दिया गया है */}
                       <th className="p-2.5">Track Map</th>
                     </tr>
                   </thead>
@@ -616,15 +621,16 @@ export default function AdminDashboard() {
                         <td className="p-2.5 font-medium">{req.patientName} ({req.patientPhone})</td>
                         <td className="p-2.5 text-gray-500">{req.time}</td>
                         <td className="p-2.5">
-                          {/* ➔ FIX 3: अगर स्टेटस Completed है तो हरा रंग आएगा */}
-                          <span className={`text-[10px] md:text-xs px-2 py-0.5 rounded-full font-bold ${req.status.includes("Completed") ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700 animate-pulse"}`}>
-                            {req.status}
-                          </span>
-                        </td>
-                        <td className="p-2.5">
-                          <button onClick={() => setTrackingData(req)} className="bg-gray-800 hover:bg-black text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer">
-                            <FaLocationDot /> Track Route
-                          </button>
+                          {/* ➔ BUG FIX: ट्रिप पूरी होते ही बटन हट जाएगा और 'Completed Trip' आ जाएगा */}
+                          {req.status.includes("Completed") ? (
+                            <span className="text-[10px] md:text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1 w-max">
+                              <IoCheckmark className="text-sm" /> Completed Trip
+                            </span>
+                          ) : (
+                            <button onClick={() => setTrackingData(req)} className="bg-gray-800 hover:bg-black text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer">
+                              <FaLocationDot /> Track Route
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -655,7 +661,6 @@ export default function AdminDashboard() {
                       </div>
                       <p className="text-xs md:text-sm font-medium text-gray-800 break-all">{req.name} ({req.phone}) <br />{req.location}</p>
                     </div>
-                    {/* ➔ FIX 3: अगर स्टेटस Completed है तो हरा रंग का बैज आएगा */}
                     <span className={`${req.status.includes("Completed") ? "bg-emerald-500" : "bg-amber-500"} text-white font-bold text-[10px] md:text-xs px-2.5 py-1 rounded-md shrink-0`}>
                       {req.status}
                     </span>
@@ -692,7 +697,7 @@ export default function AdminDashboard() {
               <div className="w-full h-80 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200 relative shadow-inner">
                 <iframe
                   title="Live Route"
-                  src={`https://maps.google.com/maps?saddr=$${trackingData.ambLat},${trackingData.ambLng}&daddr=${trackingData.userLat},${trackingData.userLng}&output=embed`}
+                  src={`https://maps.google.com/maps?saddr=${trackingData.ambLat},${trackingData.ambLng}&daddr=${trackingData.userLat},${trackingData.userLng}&output=embed`}
                   className="w-full h-full"
                   allowFullScreen
                   loading="lazy"
