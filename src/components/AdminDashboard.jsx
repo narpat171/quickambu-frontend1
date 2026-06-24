@@ -3,8 +3,8 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import { IoWarning, IoCheckmark, IoClose, IoLocate, IoCloseCircle, IoCall, IoVolumeMute } from "react-icons/io5";
 import { FaLocationDot } from "react-icons/fa6";
 import { MdDirectionsCar, MdPerson, MdPhone } from "react-icons/md";
-import { LogOut } from 'lucide-react';
-import Logo from '../assets/logo.png';
+import { LogOut } from 'lucide-react'; 
+import Logo from '../assets/logo.png'; 
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
@@ -17,14 +17,14 @@ const initialAmbulances = [];
 
 // 🌍 HAVERSINE FORMULA
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371;
+  const R = 6371; 
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a =
+  const a = 
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return R * c; 
 };
 
 export default function AdminDashboard() {
@@ -74,30 +74,29 @@ export default function AdminDashboard() {
       navigate("/AdminLogin");
     }
 
-    // 🧹 BUG FIX: पुरानी फँसी हुई एम्बुलेंस लिस्ट साफ़
     localStorage.removeItem("quickambu_dispatched_ambs");
 
     const rajasthanCoords = [
-      [28.2900, 74.9700],
-      [28.6700, 75.0300],
-      [26.9124, 75.7873],
-      [28.0200, 73.3100],
-      [27.6000, 75.1500]
+      [28.2900, 74.9700], 
+      [28.6700, 75.0300], 
+      [26.9124, 75.7873], 
+      [28.0200, 73.3100], 
+      [27.6000, 75.1500]  
     ];
 
     const fetchAllDrivers = async () => {
       try {
         const response = await axios.get("https://quickambu-backend-1.onrender.com/api/driver/all");
         if (response.data.success && response.data.data.length > 0) {
-          setAmbulances(response.data.data.map((d, index) => ({
-            id: d._id,
-            driver: d.name,
+          setAmbulances(response.data.data.map((d, index) => ({ 
+            id: d._id, 
+            driver: d.name, 
             phone: d.mobile,
             type: "ALS (ICU)",
             status: "Available",
             kmValue: 99999,
             distance: "Click 'Search Nearest' to Calculate",
-            coords: rajasthanCoords[index % rajasthanCoords.length],
+            coords: rajasthanCoords[index % rajasthanCoords.length], 
             images: [
               "https://th.bing.com/th/id/OIP.q4ZWBwsbzhHjYzDyiaV_twHaE8?w=161&h=150&c=6&r=0&o=7&dpr=1.5&pid=1.7&rm=3",
               "https://static.vecteezy.com/system/resources/previews/050/966/015/non_2x/modern-ambulance-interior-with-equipment-for-medical-emergency-photo.jpg"
@@ -106,14 +105,13 @@ export default function AdminDashboard() {
         } else {
           setAmbulances(initialAmbulances);
         }
-      } catch (error) {
+      } catch (error) { 
         setAmbulances(initialAmbulances);
       }
     };
     fetchAllDrivers();
   }, [navigate]);
 
-  // 🚀 1. MISSED REQUEST CATCHER
   useEffect(() => {
     const checkMissedRequests = () => {
       const missedReq = localStorage.getItem("global_pending_request");
@@ -126,7 +124,7 @@ export default function AdminDashboard() {
           location: parsedReq.location || "Location Coordinates Synced",
           emergencyType: parsedReq.emergency,
           time: parsedReq.time,
-          coords: parsedReq.coords
+          coords: parsedReq.coords 
         });
       }
     };
@@ -136,7 +134,6 @@ export default function AdminDashboard() {
     return () => window.removeEventListener("storage", checkMissedRequests);
   }, []);
 
-  // 🚀 SOCKET LISTENERS
   useEffect(() => {
     socket.on("receive-request", (newReq) => {
       setCurrentLiveUser({
@@ -146,18 +143,17 @@ export default function AdminDashboard() {
         location: newReq.location || "Live GPS Location",
         emergencyType: newReq.emergency,
         time: newReq.time,
-        coords: newReq.coords
+        coords: newReq.coords 
       });
       localStorage.setItem("global_pending_request", JSON.stringify(newReq));
     });
 
     socket.on("journey-status-updated", (data) => {
       const statusLabel = getJourneyLabel(data.step);
-
+      
       setSentRequests(prev => {
         const targetReq = prev.find(req => req.id === data.reqId);
-
-        // एम्बुलेंस को वापस फ्री (Available) करो
+        
         if (data.step === 7 && targetReq) {
           setAmbulances(currentAmbs => currentAmbs.map(amb => amb.id === targetReq.ambId ? { ...amb, status: "Available" } : amb));
         }
@@ -171,10 +167,10 @@ export default function AdminDashboard() {
       setSentRequests(prev => prev.map(req => {
         if (req.id === data.reqId) {
           const newLiveDistance = calculateDistance(req.userLat, req.userLng, data.lat, data.lng).toFixed(1);
-          return { ...req, ambLat: data.lat, ambLng: data.lng, distanceKm: `${newLiveDistance} km` };
+          return { ...req, ambLat: data.lat, ambLng: data.lng, distanceKm: `${newLiveDistance} km` }; 
         }
         return req;
-      })); // 👈 यहाँ पर वो जादुई ब्रैकेट ())) मिसिंग था, जो अब लग गया है!
+      }));
 
       setTrackingData(prev => {
         if (prev && prev.id === data.reqId) {
@@ -193,7 +189,7 @@ export default function AdminDashboard() {
   }, []);
 
   const getJourneyLabel = (step) => {
-    if (step === -1) return "Rejected by Driver"; // 👈 BUG FIX
+    if (step === -1) return "Rejected by Driver";
     const labels = ["Dispatched", "Ambulance Started", "On The Way", "Reached Patient", "Patient On Board", "Reached Hospital", "Completed!", "Completed!"];
     return labels[step] || "Completed!";
   };
@@ -266,17 +262,16 @@ export default function AdminDashboard() {
         osc.start();
         oscillatorRef.current = osc;
       }
-    } catch (e) { }
+    } catch (e) {}
   };
 
   const stopAlertTone = () => {
     if (oscillatorRef.current) {
-      try { oscillatorRef.current.stop(); } catch (e) { }
+      try { oscillatorRef.current.stop(); } catch (e) {}
       oscillatorRef.current = null;
     }
   };
 
-  // 🚀 DISMISS BUTTON LOGIC
   const dismissRequest = () => {
     localStorage.removeItem("global_pending_request");
     setCurrentLiveUser(null);
@@ -295,10 +290,10 @@ export default function AdminDashboard() {
     setAmbulances(prev => prev.map(amb => {
       if (amb.coords && amb.coords.length === 2) {
         const exactDistance = calculateDistance(userLat, userLng, amb.coords[0], amb.coords[1]);
-        return {
-          ...amb,
-          kmValue: exactDistance,
-          distance: `${exactDistance.toFixed(1)} km`
+        return { 
+          ...amb, 
+          kmValue: exactDistance, 
+          distance: `${exactDistance.toFixed(1)} km` 
         };
       }
       return amb;
@@ -329,30 +324,29 @@ export default function AdminDashboard() {
 
     const amb = ambulances.find(a => a.id === ambId);
     const generatedReqId = currentLiveUser?.id || `REQ-${Date.now()}`;
-
-    const userLat = currentLiveUser?.coords?.[0] || 26.8655;
+    
+    const userLat = currentLiveUser?.coords?.[0] || 26.8655; 
     const userLng = currentLiveUser?.coords?.[1] || 75.7834;
 
     const ambulanceStartLat = amb.coords?.[0] || userLat;
     const ambulanceStartLng = amb.coords?.[1] || userLng;
 
-    const dispatchData = {
+    const dispatchData = { 
       reqId: generatedReqId,
-      driverId: amb.id,
-      driverName: amb.driver,
-      vehicle: amb.id,
-      patientName: patientName,
-      patientMobile: patientPhone,
-      emergency: patientEmergency,
+      driverId: amb.id, 
+      driverName: amb.driver, 
+      vehicle: amb.id, 
+      patientName: patientName, 
+      patientMobile: patientPhone, 
+      emergency: patientEmergency, 
       location: userLocation,
-      coords: [userLat, userLng]
+      coords: [userLat, userLng] 
     };
 
     socket.emit("dispatch-ambulance", dispatchData);
-
-    // 🚀 GLOBAL BRIDGE
+    
     localStorage.setItem("newEmergencyRide", JSON.stringify(dispatchData));
-
+    
     const newDispatch = {
       id: generatedReqId,
       ambId: ambId,
@@ -362,9 +356,9 @@ export default function AdminDashboard() {
       location: userLocation,
       time: new Date().toLocaleTimeString(),
       status: "Dispatched",
-      userLat: userLat,
-      userLng: userLng,
-      ambLat: ambulanceStartLat,
+      userLat: userLat, 
+      userLng: userLng, 
+      ambLat: ambulanceStartLat, 
       ambLng: ambulanceStartLng,
       distanceKm: amb.distance,
       driverName: amb.driver,
@@ -373,8 +367,7 @@ export default function AdminDashboard() {
 
     setSentRequests([newDispatch, ...sentRequests]);
     setIncomingRequestsHistory(prev => prev.map(req => req.id === generatedReqId || req.id === currentLiveUser?.id ? { ...req, status: "Dispatched" } : req));
-
-    // काम पूरा होने के बाद ग्लोबल पेंडिंग रिक्वेस्ट मिटा दो
+    
     localStorage.removeItem("global_pending_request");
 
     setCustomNotification({ show: true, title: "Request Sent!", message: `Ambulance ${amb.driver} dispatched for ${patientName}.`, type: "success" });
@@ -384,18 +377,18 @@ export default function AdminDashboard() {
 
   const formatPhoneNumber = (phone) => {
     if (!phone) return "";
-    return phone.replace(/[^0-9+]/g, '');
+    return phone.replace(/[^0-9+]/g, ''); 
   };
 
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 via-white to-gray-50 text-gray-900 font-sans antialiased relative animate-page-fade">
-
+      
       {/* HEADER */}
       <header className="bg-[#0b1120]/95 backdrop-blur-xl border-b border-slate-800 text-white h-20 flex items-center px-6 md:px-10 justify-between sticky top-0 z-50 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)]">
         <div className="flex items-center gap-4">
           <div className="relative shrink-0 flex items-center justify-center">
             <div className="absolute inset-0 bg-red-500 blur-xl opacity-20 rounded-full"></div>
-            <Link to="/"><img src={Logo} alt="QuickAmbu" className="w-12 h-12 object-contain relative drop-shadow-2xl" /></Link>
+           <Link to="/"><img src={Logo} alt="QuickAmbu" className="w-12 h-12 object-contain relative drop-shadow-2xl"/></Link>
           </div>
           <div className="flex flex-col">
             <h1 className="text-2xl font-black tracking-tight flex items-center gap-1">Quick<span className="text-red-500">Ambu</span></h1>
@@ -414,7 +407,7 @@ export default function AdminDashboard() {
             <p className="text-sm font-bold text-emerald-400">Online & Secure</p>
           </div>
           <div className="h-8 w-px bg-slate-800 hidden md:block"></div>
-
+          
           <button onClick={() => { localStorage.removeItem("adminAuth"); navigate("/"); }} className="flex items-center gap-2 bg-slate-800/50 hover:bg-red-500/10 text-slate-300 hover:text-red-400 border border-slate-700 hover:border-red-500/50 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer shadow-sm">
             <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Exit Control</span>
           </button>
@@ -431,7 +424,7 @@ export default function AdminDashboard() {
               <p className="text-xs text-gray-500">Enter your company's master verification passkey to authorize deletion for <strong>{deleteTargetId}</strong>.</p>
             </div>
             <div className="space-y-3">
-              <input type="password" placeholder="Enter Company Master Key" value={enteredMasterKey} onChange={(e) => setEnteredMasterKey(e.target.value)} className="w-full p-3 bg-gray-50 border rounded-xl text-center text-xs md:text-sm tracking-widest font-mono focus:ring-2 focus:ring-red-500 focus:outline-none transition-all" />
+              <input type="password" placeholder="Enter Company Master Key" value={enteredMasterKey} onChange={(e) => setEnteredMasterKey(e.target.value)} className="w-full p-3 bg-gray-50 border rounded-xl text-center text-xs md:text-sm tracking-widest font-mono focus:ring-2 focus:ring-red-500 focus:outline-none transition-all"/>
               <div className="flex gap-2.5 pt-1">
                 <button onClick={() => { setDeleteTargetId(null); setEnteredMasterKey(""); }} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs py-3 rounded-xl transition duration-150 cursor-pointer">Cancel</button>
                 <button onClick={handleConfirmDeleteAmbulance} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black text-xs py-3 rounded-xl transition duration-150 shadow-sm shadow-red-200 cursor-pointer">Verify & Remove</button>
@@ -467,7 +460,7 @@ export default function AdminDashboard() {
                 {currentLiveUser ? "LIVE EMERGENCY INCOMING SIGNAL DETECTED" : "INCOMING USER REQUEST PANEL"}
               </h3>
             </div>
-
+            
             <div className="flex items-center gap-3">
               {currentLiveUser && (
                 <button onClick={stopAlertTone} className="bg-red-100 hover:bg-red-200 text-red-700 font-bold px-3 py-1.5 rounded-lg text-xs md:text-sm animate-pulse flex items-center gap-1.5 transition-all cursor-pointer border border-red-300">
@@ -537,8 +530,9 @@ export default function AdminDashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1 font-bold text-xs md:text-xs transition-all duration-300 relative cursor-pointer ${activeTab === tab.id ? "border-b-2 border-red-600 text-red-600 scale-105" : "text-gray-500 hover:text-gray-900"
-                }`}
+              className={`px-3 py-1 font-bold text-xs md:text-xs transition-all duration-300 relative cursor-pointer ${
+                activeTab === tab.id ? "border-b-2 border-red-600 text-red-600 scale-105" : "text-gray-500 hover:text-gray-900"
+              }`}
             >
               {tab.label}
             </button>
@@ -559,8 +553,16 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 items-start">
               {displayedAmbulances.map((amb) => {
                 const imgIndex = imgIndexes[amb.id] || 0;
-
-                const isDispatched = sentRequests.some(req => req.ambId === amb.id && !req.status.includes("Completed"));
+                
+                // 🚀 SUPER SMART BUG FIX:
+                // सिर्फ 'आखरी' (सबसे लेटेस्ट) रिक्वेस्ट को चेक करेगा!
+                // पुरानी फँसी हुई रिक्वेस्ट्स से अब एम्बुलेंस लॉक नहीं होगी!
+                const lastReqForAmb = sentRequests.find(req => req.ambId === amb.id);
+                const isDispatched = lastReqForAmb 
+                   ? !lastReqForAmb.status.includes("Completed") && 
+                     !lastReqForAmb.status.includes("Reject") && 
+                     !lastReqForAmb.status.includes("Cancel")
+                   : false;
 
                 return (
                   <div key={amb.id} className={`bg-white rounded-2xl border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg relative ${isLocationFiltered ? "border-green-300 ring-2 ring-green-50/50" : "border-gray-200"}`}>
@@ -579,7 +581,7 @@ export default function AdminDashboard() {
                             <span className="text-[9px] md:text-[10px] font-black uppercase bg-gray-100 px-2 py-0.5 rounded-sm text-gray-600 break-all">{amb.type}</span>
                             <h3 className="text-sm md:text-base font-bold text-gray-950 mt-1">{amb.driver}</h3>
                           </div>
-
+                          
                           <span className={`text-[10px] md:text-xs font-bold px-2 py-0.5 md:py-1 rounded-full whitespace-nowrap transition-all duration-300 ${isDispatched ? "bg-blue-50 text-blue-700 animate-pulse" : "bg-green-50 text-green-700"}`}>
                             ● {isDispatched ? "Dispatched" : "Available"}
                           </span>
@@ -593,9 +595,23 @@ export default function AdminDashboard() {
 
                       <div className="pt-1">
                         {isDispatched ? (
-                          <a href={`tel:${formatPhoneNumber(amb.phone)}`} className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all transform active:scale-95 duration-150 text-center animate-scale-up cursor-pointer">
-                            <IoCall /> CALL DRIVER
-                          </a>
+                          <div className="flex gap-2">
+                            <a href={`tel:${formatPhoneNumber(amb.phone)}`} className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-3 rounded-xl shadow-md transition-all transform active:scale-95 duration-150 text-center animate-scale-up cursor-pointer">
+                              <IoCall /> CALL DRIVER
+                            </a>
+                            <button 
+                               onClick={() => {
+                                  if(window.confirm(`क्या आप ${amb.driver} की एम्बुलेंस को नई राइड के लिए ज़बरदस्ती फ्री (Available) करना चाहते हैं?`)) {
+                                     setSentRequests(prev => prev.map(req => req.ambId === amb.id && !req.status.includes("Completed") ? { ...req, status: "Completed! (Admin Freed)" } : req));
+                                     setCustomNotification({ show: true, title: "Ambulance Freed", message: `${amb.driver} is now free for new bookings.`, type: "success" });
+                                  }
+                               }}
+                               className="bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-600 border border-gray-200 hover:border-red-200 px-3 rounded-xl font-bold text-xs transition-all shadow-sm flex items-center gap-1 cursor-pointer"
+                               title="Force Free Ambulance"
+                            >
+                               <IoCloseCircle className="text-lg" /> Free
+                            </button>
+                          </div>
                         ) : (
                           <>
                             <button onClick={() => setOpenFormId(openFormId === amb.id ? null : amb.id)} className={`w-full text-white text-xs font-bold py-2.5 rounded-xl transition-all duration-200 transform active:scale-95 cursor-pointer ${openFormId === amb.id ? "bg-red-600 hover:bg-red-700 shadow-sm" : "bg-green-700 hover:bg-green-800"}`}>
@@ -703,7 +719,7 @@ export default function AdminDashboard() {
           <div className="fixed inset-0 z-[50] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all duration-300 animate-fade-in">
             <div className="bg-white rounded-3xl shadow-2xl border-4 border-slate-800 max-w-lg w-full p-6 space-y-4 transform transition-all duration-300 animate-scale-up relative">
               <div className="flex items-center justify-between border-b pb-3">
-                <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><FaLocationDot className="text-blue-600" /> Live Tracking Route</h3>
+                <h3 className="text-lg font-black text-gray-900 flex items-center gap-2"><FaLocationDot className="text-blue-600"/> Live Tracking Route</h3>
                 <button onClick={() => setTrackingData(null)} className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer bg-gray-100 rounded-full p-1">
                   <IoCloseCircle className="text-2xl" />
                 </button>
@@ -720,7 +736,7 @@ export default function AdminDashboard() {
                   <p className="text-gray-500 text-[10px] mt-0.5 break-all">{trackingData.location}</p>
                 </div>
               </div>
-
+              
               <div className="w-full h-80 bg-gray-100 rounded-xl overflow-hidden border-2 border-gray-200 relative shadow-inner">
                 <iframe
                   title="Live Route"
