@@ -223,11 +223,16 @@ export default function AmbulanceDashboard() {
   };
 
   // 🚀 ACCEPT करते ही एडमिन/यूज़र को सिग्नल भेजें
-  const handleAccept = () => {
+ const handleAccept = () => {
     setIsAccepted(true);
     setCurrentStep(1); 
     if (requestData && requestData.reqId) {
-      socket.emit("update-journey-status", { reqId: requestData.reqId, step: 1 });
+      socket.emit("update-journey-status", { 
+        reqId: requestData.reqId, 
+        step: 1,
+        driverName: driverData.name,    // 👈 BUG FIX: ये भेजना ज़रूरी था!
+        driverMobile: driverData.mobile // 👈 BUG FIX: ये भेजना ज़रूरी था!
+      });
     }
   };
 
@@ -237,6 +242,10 @@ export default function AmbulanceDashboard() {
       "क्या आप वाकई इस आपातकालीन अनुरोध (Emergency Request) को अस्वीकार (Reject) करना चाहते हैं?",
       "confirm",
       () => {
+        // 👈 BUG FIX: एडमिन और यूज़र को बताओ कि रिक्वेस्ट कैंसिल हो गई है!
+        if (requestData && requestData.reqId) {
+          socket.emit("update-journey-status", { reqId: requestData.reqId, step: -1 }); 
+        }
         setHasRequest(false);
         setIsAccepted(false);
         setCurrentStep(0);
@@ -248,9 +257,9 @@ export default function AmbulanceDashboard() {
   // ➔ 🚀 गूगल मैप्स नेविगेशन
   const handleLocationClick = () => {
     if(requestData && requestData.coords && requestData.coords[0] !== null) {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=$${requestData.coords[0]},${requestData.coords[1]}`, '_blank');
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${requestData.coords[0]},${requestData.coords[1]}`, '_blank');
     } else if (requestData && requestData.location) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=$${encodeURIComponent(requestData.location)}`, '_blank');
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(requestData.location)}`, '_blank');
     } else {
       triggerModal("⚠️ Location Error", "मरीज़ की लोकेशन उपलब्ध नहीं है!", "alert"); 
     }
@@ -264,11 +273,15 @@ export default function AmbulanceDashboard() {
         setCurrentStep(nextStep);
         
         if (requestData && requestData.reqId) {
-          socket.emit("update-journey-status", { reqId: requestData.reqId, step: nextStep });
+          socket.emit("update-journey-status", { 
+            reqId: requestData.reqId, 
+            step: nextStep,
+            driverName: driverData.name,
+            driverMobile: driverData.mobile
+          });
         }
         
       } else if (stepNumber === 6) {
-        
         if (requestData && requestData.reqId) {
           socket.emit("update-journey-status", { reqId: requestData.reqId, step: 7 });
         }
