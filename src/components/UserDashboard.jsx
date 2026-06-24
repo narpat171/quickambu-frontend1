@@ -26,7 +26,7 @@ function UserDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'alert', onConfirm: () => {} });
 
-  // 🚀 1. REFRESH FIX: State को localStorage से पढ़कर चालू करें ताकि डेटा न उड़े
+  // 🚀 REFRESH FIX: State को localStorage से पढ़कर चालू करें
   const [myReqId, setMyReqId] = useState(() => localStorage.getItem("myReqId") || null); 
   const [journeyStep, setJourneyStep] = useState(() => parseInt(localStorage.getItem("journeyStep")) || 0); 
   const [assignedDriver, setAssignedDriver] = useState(() => {
@@ -36,7 +36,7 @@ function UserDashboard() {
   
   const navigate = useNavigate();
 
-  // 🚀 2. REFRESH FIX: जब भी ये बदलें, इन्हें localStorage में सेव कर दो
+  // 🚀 REFRESH FIX: जब भी ये बदलें, इन्हें localStorage में सेव कर दो
   useEffect(() => {
     if (myReqId) localStorage.setItem("myReqId", myReqId);
     else localStorage.removeItem("myReqId");
@@ -62,8 +62,7 @@ function UserDashboard() {
         setContactNumber(response.data.data.mobile);
         setPatientName(response.data.data.name);
       } else {
-        localStorage.removeItem("userToken");
-        navigate("/UserLogin");
+        handleLogout();
       }
     } catch (error) { 
       console.error("Backend Error: ", error); 
@@ -119,19 +118,16 @@ function UserDashboard() {
 
   useEffect(() => { fetchUserProfile(); fetchLiveLocation(); }, []);
 
-  // 🚀 3. SOCKET LISTENERS (ड्राइवर की डिटेल्स रिसीव करने के लिए)
+  // 🚀 SOCKET LISTENERS
   useEffect(() => {
     socket.on("journey-status-updated", (data) => {
-      // अगर यह हमारी ही रिक्वेस्ट है
       if (data.reqId === myReqId || data.reqId === localStorage.getItem("myReqId")) {
         setJourneyStep(data.step);
         
-        // 👉 अगर बैकएंड ने ड्राइवर का नाम और नंबर भेजा है, तो उसे सेव कर लो!
         if (data.driverName && data.driverMobile) {
           setAssignedDriver({ name: data.driverName, mobile: data.driverMobile });
         }
 
-        // ट्रिप ख़त्म होने पर सब क्लियर कर दो
         if (data.step === 7) {
           triggerModal("🎉 Trip Completed", "आप सुरक्षित रूप से पहुँच गए हैं! QuickAmbu का उपयोग करने के लिए धन्यवाद।", "alert");
           setTimeout(() => {
@@ -165,7 +161,14 @@ function UserDashboard() {
     } catch (error) { triggerModal("Error", "अपडेट फेल हो गया! कृपया दोबारा प्रयास करें।", "alert"); }
   };
 
-  const handleLogout = () => { localStorage.removeItem("userToken"); navigate("/UserLogin"); };
+  // ➔ 🚀 BUG FIX: लॉगआउट करते समय पुरानी रिक्वेस्ट का पूरा कचरा साफ़ करें
+  const handleLogout = () => { 
+    localStorage.removeItem("userToken"); 
+    localStorage.removeItem("myReqId");
+    localStorage.removeItem("journeyStep");
+    localStorage.removeItem("assignedDriver");
+    navigate("/UserLogin"); 
+  };
 
   const handleEmergencyRequest = () => {
     if (!patientName.trim()) return triggerModal("Warning", "कृपया मरीज़ का नाम डालें!", "alert");
@@ -180,7 +183,7 @@ function UserDashboard() {
     const newReqId = "REQ-" + Date.now();
     setMyReqId(newReqId); 
     setJourneyStep(0); 
-    setAssignedDriver(null); // नई रिक्वेस्ट पर पुराना ड्राइवर हटा दो
+    setAssignedDriver(null); 
 
     const emergencyDetails = {
       id: newReqId, 
@@ -195,6 +198,9 @@ function UserDashboard() {
     };
 
     socket.emit("new-ambulance-request", emergencyDetails);
+    
+    // ➔ 🚀 GLOBAL BRIDGE: एडमिन के ऑफलाइन होने पर भी रिक्वेस्ट सेव रखने वाला जुगाड़
+    localStorage.setItem("global_pending_request", JSON.stringify(emergencyDetails));
 
     setTimeout(() => {
       triggerModal("🚨 Request Sent!", `आपकी रिक्वेस्ट भेज दी गई है! कृपया नीचे अपनी एम्बुलेंस ट्रैक करें।`, "alert");
@@ -317,7 +323,7 @@ function UserDashboard() {
                 <Navigation className="w-5 h-5"/> Live Ambulance Status
               </h2>
               
-              {/* 🚀 4. DRIVER CONTACT CARD (अगर ड्राइवर असाइन हो गया है) */}
+              {/* DRIVER CONTACT CARD */}
               {assignedDriver && (
                 <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm animate-in fade-in zoom-in duration-300">
                   <div>
@@ -325,7 +331,6 @@ function UserDashboard() {
                     <p className="text-lg font-black text-gray-900 leading-none">{assignedDriver.name || "Ambulance Driver"}</p>
                   </div>
                   
-                  {/* यह <a href="tel:..."> वाला बटन है जिसपर क्लिक करते ही सीधे कॉल लगेगी */}
                   <a 
                     href={`tel:${assignedDriver.mobile}`} 
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-600/30 transition-all active:scale-95 cursor-pointer"
