@@ -8,6 +8,7 @@ import Logo from '../assets/logo.png';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
+import { io } from 'socket.io-client';
 
 const socket = io("https://quickambu-backend-1.onrender.com");
 const initialAmbulances = [];
