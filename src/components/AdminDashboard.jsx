@@ -3,7 +3,7 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import { IoWarning, IoCheckmark, IoClose, IoLocate, IoCloseCircle, IoCall, IoVolumeMute } from "react-icons/io5";
 import { FaLocationDot } from "react-icons/fa6";
 import { MdDirectionsCar, MdPerson, MdPhone } from "react-icons/md";
-import { LogOut, Sun, Moon, Radar, CheckCircle2, Navigation } from 'lucide-react'; 
+import { LogOut, Sun, Moon, Radar, CheckCircle2, Navigation, User } from 'lucide-react';
 import Logo from '../assets/logo.png'; 
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
