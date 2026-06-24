@@ -26,7 +26,7 @@ function UserDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [modalConfig, setModalConfig] = useState({ title: '', message: '', type: 'alert', onConfirm: () => {} });
 
-  // 🚀 1. SMART SELF-CLEANING STATE: अगर पुरानी ट्रिप 7 (Complete) या -1 (Reject) पर अटकी है, तो उसे तुरंत उड़ा दो!
+  // 🚀 1. SMART SELF-CLEANING STATE
   const [journeyStep, setJourneyStep] = useState(() => {
     const step = parseInt(localStorage.getItem("journeyStep"));
     return (step === 7 || step === -1 || isNaN(step)) ? 0 : step;
@@ -139,13 +139,13 @@ function UserDashboard() {
       if (data.reqId === myReqId || data.reqId === localStorage.getItem("myReqId")) {
         
         if (data.step === 7) {
-          // ट्रिप पूरी होते ही तुरंत क्लियर कर दो! कोई वेट नहीं!
+          // ➔ BUG FIX: ट्रिप पूरी होते ही तुरंत क्लियर कर दो! कोई वेट नहीं!
           triggerModal("🎉 Trip Completed", "आप सुरक्षित रूप से पहुँच गए हैं! QuickAmbu का उपयोग करने के लिए धन्यवाद।", "alert");
           setMyReqId(null);
           setJourneyStep(0);
           setAssignedDriver(null);
         } else if (data.step === -1) {
-          // अगर ड्राइवर ने रिजेक्ट किया, तो भी तुरंत क्लियर कर दो!
+          // ➔ BUG FIX: अगर ड्राइवर ने रिजेक्ट किया, तो भी तुरंत क्लियर कर दो!
           triggerModal("❌ Ride Cancelled", "ड्राइवर ने किसी कारणवश रिक्वेस्ट अस्वीकार कर दी है। कृपया नई एम्बुलेंस बुक करें।", "alert");
           setMyReqId(null);
           setJourneyStep(0);

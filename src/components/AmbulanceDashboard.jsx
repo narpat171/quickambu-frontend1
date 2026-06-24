@@ -208,8 +208,6 @@ export default function AmbulanceDashboard() {
   };
 
   const handleLogout = () => {
-    // ➔ ध्यान दें: हम सिर्फ ड्राइवर का लॉगिन टोकन उड़ा रहे हैं, 
-    // bookingsHistory नहीं उड़ा रहे हैं। इसलिए लॉगआउट के बाद भी हिस्ट्री सेफ रहेगी!
     localStorage.removeItem("driverToken");
     navigate("/DriverLogin");
   };
@@ -222,29 +220,29 @@ export default function AmbulanceDashboard() {
     setShowModal(true);
   };
 
-  // 🚀 ACCEPT करते ही एडमिन/यूज़र को सिग्नल भेजें
- const handleAccept = () => {
+  // 🚀 BUG FIX: ACCEPT करते ही एडमिन/यूज़र को सिग्नल के साथ ड्राइवर का नाम और नंबर भेजें
+  const handleAccept = () => {
     setIsAccepted(true);
     setCurrentStep(1); 
     if (requestData && requestData.reqId) {
       socket.emit("update-journey-status", { 
         reqId: requestData.reqId, 
         step: 1,
-        driverName: driverData.name,    // 👈 BUG FIX: ये भेजना ज़रूरी था!
-        driverMobile: driverData.mobile // 👈 BUG FIX: ये भेजना ज़रूरी था!
+        driverName: driverData.name,
+        driverMobile: driverData.mobile
       });
     }
   };
 
+  // 🚀 BUG FIX: REJECT करते ही एडमिन/यूज़र को "-1" सिग्नल भेजें ताकि वो कैंसिल हो जाए
   const handleReject = () => {
     triggerModal(
       "⚠️ Warning!",
       "क्या आप वाकई इस आपातकालीन अनुरोध (Emergency Request) को अस्वीकार (Reject) करना चाहते हैं?",
       "confirm",
       () => {
-        // 👈 BUG FIX: एडमिन और यूज़र को बताओ कि रिक्वेस्ट कैंसिल हो गई है!
         if (requestData && requestData.reqId) {
-          socket.emit("update-journey-status", { reqId: requestData.reqId, step: -1 }); 
+          socket.emit("update-journey-status", { reqId: requestData.reqId, step: -1 });
         }
         setHasRequest(false);
         setIsAccepted(false);
@@ -254,7 +252,7 @@ export default function AmbulanceDashboard() {
     );
   };
 
-  // ➔ 🚀 गूगल मैप्स नेविगेशन
+  // ➔ 🚀 BUG FIX: गूगल मैप्स नेविगेशन का लिंक सही किया
   const handleLocationClick = () => {
     if(requestData && requestData.coords && requestData.coords[0] !== null) {
       window.open(`https://www.google.com/maps/dir/?api=1&destination=${requestData.coords[0]},${requestData.coords[1]}`, '_blank');
@@ -274,14 +272,15 @@ export default function AmbulanceDashboard() {
         
         if (requestData && requestData.reqId) {
           socket.emit("update-journey-status", { 
-            reqId: requestData.reqId, 
-            step: nextStep,
-            driverName: driverData.name,
-            driverMobile: driverData.mobile
+             reqId: requestData.reqId, 
+             step: nextStep,
+             driverName: driverData.name,
+             driverMobile: driverData.mobile
           });
         }
         
       } else if (stepNumber === 6) {
+        
         if (requestData && requestData.reqId) {
           socket.emit("update-journey-status", { reqId: requestData.reqId, step: 7 });
         }
