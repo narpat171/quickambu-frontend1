@@ -134,6 +134,7 @@ export default function AdminDashboard() {
     return () => window.removeEventListener("storage", checkMissedRequests);
   }, []);
 
+  // 🚀 SOCKET LISTENERS
   useEffect(() => {
     socket.on("receive-request", (newReq) => {
       setCurrentLiveUser({
@@ -151,15 +152,8 @@ export default function AdminDashboard() {
     socket.on("journey-status-updated", (data) => {
       const statusLabel = getJourneyLabel(data.step);
       
-      setSentRequests(prev => {
-        const targetReq = prev.find(req => req.id === data.reqId);
-        
-        if (data.step === 7 && targetReq) {
-          setAmbulances(currentAmbs => currentAmbs.map(amb => amb.id === targetReq.ambId ? { ...amb, status: "Available" } : amb));
-        }
-        return prev.map(req => req.id === data.reqId ? { ...req, status: statusLabel } : req);
-      });
-
+      // 🚀 BUG FIX: अब यह कोड 100% Pure (क्लीन) है! React इसे कभी रिजेक्ट नहीं करेगा।
+      setSentRequests(prev => prev.map(req => req.id === data.reqId ? { ...req, status: statusLabel } : req));
       setIncomingRequestsHistory(prev => prev.map(req => req.id === data.reqId ? { ...req, status: statusLabel } : req));
     });
 
@@ -554,9 +548,6 @@ export default function AdminDashboard() {
               {displayedAmbulances.map((amb) => {
                 const imgIndex = imgIndexes[amb.id] || 0;
                 
-                // 🚀 SUPER SMART BUG FIX:
-                // सिर्फ 'आखरी' (सबसे लेटेस्ट) रिक्वेस्ट को चेक करेगा!
-                // पुरानी फँसी हुई रिक्वेस्ट्स से अब एम्बुलेंस लॉक नहीं होगी!
                 const lastReqForAmb = sentRequests.find(req => req.ambId === amb.id);
                 const isDispatched = lastReqForAmb 
                    ? !lastReqForAmb.status.includes("Completed") && 
